@@ -1,0 +1,6 @@
+name: astrbot_plugin_dafeiyu
+display_name: 大肥鱼
+desc: 大肥鱼 QQ 机器人：人设、语音、唱歌、表情、名单、空间
+version: 2.0.0
+author: dafeiyu
+repo: https://github.com/void-HaoNan/dafeiyu-qqbot

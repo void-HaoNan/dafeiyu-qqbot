@@ -1,0 +1,11 @@
+{
+    "voice_enable": true,
+    "use_gpt_sovits": true,
+    "gsv_url": "http://127.0.0.1:9880",
+    "gsv_ref_audio": "D:\\GPT-SoVITS\\models\\ref.wav",
+    "gsv_prompt_text": "参考音频对应的文字",
+    "emotion_ref_enable": false,
+    "emotion_ref_root": "D:\\GPT-SoVITS\\models\\emotion",
+    "edge_voice": "zh-CN-XiaoyiNeural",
+    "max_chars": 150
+}

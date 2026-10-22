@@ -1,0 +1,7 @@
+{
+  "说明": {
+    "description": "模块开关和参数在 data/dafeiyu/config.json，由控制台「管理」页调整；AstrBot 插件页这里不用改。",
+    "type": "string",
+    "default": ""
+  }
+}

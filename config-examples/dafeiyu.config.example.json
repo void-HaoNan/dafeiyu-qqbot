@@ -1,0 +1,41 @@
+{
+  "admin_qq": "你的管理员QQ",
+  "bot_qq": "机器人QQ",
+  "group": "主群号",
+  "modules": {
+    "maintenance": {
+      "enabled": false,
+      "message": "唔，本鱼正在升级，暂时没办法好好聊天，等我弄好了再叫你。",
+      "open_message": "唔，本鱼去维护一下，弄好了就回来。",
+      "close_message": "本鱼回来了，刚刚弄完。",
+      "cooldown_seconds": 3
+    },
+    "voice": {
+      "enabled": true,
+      "voice_enable": true,
+      "max_chars": 150,
+      "use_gpt_sovits": true,
+      "gsv_url": "http://127.0.0.1:9880"
+    },
+    "asr": {
+      "enabled": true,
+      "model_dir": "D:\\QQBot\\models\\asr\\faster-whisper-small",
+      "language": "zh",
+      "cpu_threads": 8,
+      "auto_download": true
+    },
+    "sendto": {
+      "enabled": true,
+      "default_group": "",
+      "cooldown_seconds": 5,
+      "max_per_minute": 6
+    }
+  },
+  "paths": {
+    "tts_root": "",
+    "rvc_root": "",
+    "rvc_pkg": "",
+    "model_map": "",
+    "ffmpeg": ""
+  }
+}

@@ -1,0 +1,17 @@
+{
+    "zh": {
+        "name": "中文模型",
+        "model": "your-zh-model.pth",
+        "index": "assets/indices/your-zh-model.index"
+    },
+    "ja": {
+        "name": "日文模型",
+        "model": "your-ja-model.pth",
+        "index": "assets/indices/your-ja-model.index"
+    },
+    "default": {
+        "name": "默认模型",
+        "model": "your-default-model.pth",
+        "index": "assets/indices/your-default-model.index"
+    }
+}

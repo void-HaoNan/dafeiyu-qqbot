@@ -1,0 +1,8 @@
+{
+    "name": "我的音色",
+    "gpt": "D:\\GPT-SoVITS\\models\\model-e10.ckpt",
+    "sovits": "D:\\GPT-SoVITS\\models\\model_e16_s544.pth",
+    "emotion_root": "D:\\GPT-SoVITS\\models\\emotion",
+    "ref_audio": "D:\\GPT-SoVITS\\models\\ref.wav",
+    "prompt": "参考音频里说的那句话"
+}

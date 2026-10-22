@@ -1,0 +1,25 @@
+{
+  "max_chars_warn": 45,
+  "max_chars_error": 70,
+  "repeat_ratio": 0.9,
+  "rules": [
+    {
+      "id": "ai_tone",
+      "level": "error",
+      "desc": "AI 腔 / 客服腔",
+      "pattern": "作为(一个)?AI|我是AI|人工智能助手|有什么可以帮您|希望对您有帮助|供您参考|总之|综上所述|首先|其次|建议您|您可以"
+    },
+    {
+      "id": "wrong_self",
+      "level": "error",
+      "desc": "自称不对（应该是本鱼）",
+      "pattern": "本鲸|人家|本人"
+    },
+    {
+      "id": "bad_word",
+      "level": "warn",
+      "desc": "爹味说教词",
+      "pattern": "你应该|你必须|正确做法|本质上|从某种意义上"
+    }
+  ]
+}

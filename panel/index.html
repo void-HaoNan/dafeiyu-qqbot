@@ -1,0 +1,2041 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>大肥鱼控制台</title>
+<style>
+  :root {
+    --bg:#0f1420; --card:#171e2e; --line:#253047; --text:#dbe4f5; --sub:#8b9bb8;
+    --accent:#5b9cff; --ok:#3ddc97; --warn:#ffb347; --bad:#ff5d5d;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.6 "Microsoft YaHei",system-ui,sans-serif}
+  .app{display:flex;min-height:100vh}
+  .side{width:196px;flex:none;border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow:auto;background:#0d121c}
+  .brand{display:flex;align-items:center;gap:10px;padding:2px 6px 16px;margin-bottom:6px;border-bottom:1px solid var(--line)}
+  .brand .logo{font-size:22px;line-height:1}
+  .sidegroup{font-size:11px;color:#5d6c88;letter-spacing:1.5px;padding:14px 10px 5px}
+  .sidetab{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;cursor:pointer;color:var(--sub);font-size:13.5px;margin-bottom:2px}
+  .sidetab:hover{background:#18202e;color:var(--text)}
+  .sidetab.active{background:#1e2a3d;color:var(--text);font-weight:600;box-shadow:inset 3px 0 0 var(--accent)}
+  .sidetab{cursor:grab}
+  .sidetab.dragover{outline:2px dashed var(--accent);outline-offset:-2px}
+  .modecard{border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer;transition:border-color .15s}
+  .modecard:hover{border-color:#2c3c58}
+  .modecard.on{border-color:var(--accent);background:#16233a}
+  .modecard b{display:block;margin-bottom:4px}
+  .sidetab .ic{width:16px;text-align:center;opacity:.85}
+  .sidefoot{margin-top:auto;padding:12px 8px 4px;border-top:1px solid var(--line);font-size:11px;line-height:1.7;color:#5d6c88}
+  .stage{flex:1;min-width:0;padding:20px 24px 48px}
+  @media (max-width:760px){.app{flex-direction:column}.side{width:auto;height:auto;position:static;flex-direction:row;flex-wrap:wrap;gap:4px;padding:10px}.brand{display:none}.sidegroup{display:none}.sidefoot{display:none}.stage{padding:12px}}
+  main{padding:0;max-width:1280px;margin:0 auto}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+  .overview-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));align-items:stretch}
+  .overview-grid .card{height:100%;min-height:220px}
+  .plugin-list{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+  .tokrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:12px}
+  .tokstat{background:#131a26;border:1px solid var(--line);border-radius:10px;padding:14px;text-align:center;min-height:96px;display:flex;flex-direction:column;justify-content:center}
+  .tokstat span{color:var(--sub);font-size:12px}
+  .tokstat b{font-size:22px;line-height:1.2;margin-top:6px;font-weight:600}
+  @media (max-width:900px){.tokrow{grid-template-columns:repeat(2,minmax(0,1fr))}.plugin-list{grid-template-columns:1fr}}
+  @media (max-width:760px){.tokrow{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;transition:border-color .15s}
+  .card:hover{border-color:#2c3c58}
+  table tr:hover td{background:#141d2b}
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-thumb{background:#26324a;border-radius:6px}
+  ::-webkit-scrollbar-track{background:transparent}
+  .card h3{margin:0 0 10px;font-size:13px;color:var(--sub);font-weight:500}
+  .kv{display:flex;justify-content:space-between;padding:3px 0}
+  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px}
+  .on{background:var(--ok)} .off{background:var(--bad)}
+  button{background:#22304a;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:6px 11px;cursor:pointer;font-size:13px}
+  button:hover{border-color:var(--accent)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#06101f;font-weight:600}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .switch{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px dashed var(--line)}
+  .switch:last-child{border-bottom:0}
+  .sw{width:42px;height:22px;border-radius:12px;background:#2b364e;position:relative;cursor:pointer;transition:.2s;flex:none}
+  .sw::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#7d8aa5;transition:.2s}
+  .sw.on{background:var(--ok)} .sw.on::after{left:23px;background:#06281a}
+  pre{background:#0b0f18;border:1px solid var(--line);border-radius:10px;padding:12px;overflow:auto;max-height:560px;font-size:12px;line-height:1.5;white-space:pre-wrap;word-break:break-all}
+  textarea{width:100%;min-height:420px;background:#0b0f18;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:13px;line-height:1.7;resize:vertical}
+  .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px}
+  .thumbs img{width:100%;aspect-ratio:1;object-fit:contain;background:#0b0f18;border-radius:8px;border:1px solid var(--line)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--sub);font-weight:500}
+  th.thsort{cursor:pointer;user-select:none;white-space:nowrap}
+  th.thsort:hover{color:var(--text)}
+  th.thsort.cur{color:#8fb8ff}
+  .muted{color:var(--sub);font-size:12.5px}
+  .in{color:#7fd3a8} .out{color:#8ab7ff}
+  input,select{background:#0b0f18;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px}
+  .toast{position:fixed;right:20px;bottom:20px;background:#22304a;border:1px solid var(--accent);padding:10px 16px;border-radius:10px;opacity:0;transition:.3s;pointer-events:none;z-index:9}
+  .toast.show{opacity:1}
+  .hidden{display:none}
+  .stream{max-height:560px;overflow:auto}
+  .stream div{padding:4px 6px;border-bottom:1px solid #0e1420}
+  .stream .t{color:var(--sub);font-size:12px;margin-right:8px}
+  .mtext{white-space:pre-wrap;word-break:break-word}
+  .mtext.clamp{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .expand{color:var(--accent);font-size:12px;cursor:pointer;margin-left:4px;text-decoration:none}
+  .msgimg{max-width:150px;max-height:150px;border-radius:8px;border:1px solid var(--line);margin:4px 0;display:inline-block;vertical-align:middle;cursor:zoom-in}
+  .tag{font-size:11px;border:1px solid var(--line);border-radius:5px;padding:0 5px;margin-right:6px}
+  /* 快捷设置 */
+  .qrow{display:flex;gap:12px;align-items:center;padding:10px 8px;border-bottom:1px solid var(--line);border-radius:6px}
+  .qrow:hover{background:#182135}
+  .qlabel{width:180px;flex-shrink:0}
+  .qctrl{flex:1;display:flex;align-items:center;gap:8px}
+  .qstar{font-size:17px;line-height:1;padding:2px 8px;border:1px solid transparent;border-radius:6px;background:none;cursor:pointer}
+  .qstar:hover{border-color:var(--line);background:#1e2a3d}
+  .qgroup{margin:16px 0 2px}
+  .qtag{font-size:11px;color:#7b8ea8;letter-spacing:1px}
+  .qsave{font-size:11px;color:#5aa469;white-space:nowrap}
+  .qsave a{color:#7fb0ff}
+  /* 插件折叠卡 */
+  .plug{border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden}
+  .plug.open{border-color:#3a5a86}
+  .plug.off{opacity:.6}
+  .plughead{display:flex;gap:12px;align-items:center;padding:10px 12px;background:#141c2a}
+  .plugmain{flex:1;min-width:0}
+  .plugacts{display:flex;gap:6px;flex-shrink:0}
+  .plugacts button{padding:4px 9px;font-size:12px}
+  .plugacts .danger{color:var(--bad)}
+  .plugbody{padding:6px 14px 14px;border-top:1px solid var(--line);background:#0f1520}
+  .badge.off{background:#3a2530;color:#ff9c9c;font-size:10px;padding:1px 5px;border-radius:4px}
+  /* 首页 */
+  .hero{display:flex;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+    background:linear-gradient(120deg,#1b2a44,#172033 60%,#1a2436);border:1px solid var(--line);
+    border-radius:14px;padding:20px 22px}
+  .hero-title{font-size:20px;font-weight:700;display:flex;align-items:center;gap:10px}
+  .hero-sub{color:var(--sub);font-size:12.5px;margin-top:6px}
+  .hero-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .quickgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px;margin-top:14px}
+  .qcard{position:relative;background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:16px 16px 18px;cursor:pointer;transition:.15s}
+  .qcard:hover{border-color:var(--accent);transform:translateY(-1px)}
+  .qcard .qt{font-weight:600;font-size:14px}
+  .qcard .qs{color:var(--sub);font-size:12px;margin-top:5px}
+  .qcard .arrow{position:absolute;right:14px;top:14px;color:#5d6c88;font-size:15px}
+  .rline{padding:7px 0;border-bottom:1px dashed var(--line);font-size:13px;line-height:1.5}
+  .rline:last-child{border-bottom:0}
+  #clock{color:var(--sub)}
+  .tgl{position:relative;display:inline-block;width:44px;height:24px;flex:none}
+  .tgl input{display:none}
+  .tgl span{position:absolute;inset:0;background:#2a3446;border-radius:12px;transition:.18s;cursor:pointer}
+  .tgl span:before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#8a97ad;border-radius:50%;transition:.18s}
+  .tgl input:checked+span{background:#2f6f4f}
+  .tgl input:checked+span:before{transform:translateX(20px);background:#dff5e8}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:900px){.grid2{grid-template-columns:1fr}}
+  .stat{display:flex;gap:8px;align-items:baseline;background:#131a26;border:1px solid var(--line);border-radius:10px;padding:8px 14px}
+  .stat b{font-size:18px}
+  .avatar{width:28px;height:28px;border-radius:50%;background:#1e2a3d;color:#9fb3d1;display:inline-flex;align-items:center;justify-content:center;font-size:12px;margin-right:8px;flex:none}
+  .rowline{display:flex;align-items:center;padding:7px 4px;border-bottom:1px solid #0e1420}
+  .nlist{overflow:hidden}
+  .nlist.open{max-height:540px;overflow:auto}
+  .pcard{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:#111827}
+  .mini{padding:2px 8px;font-size:12px;border-radius:6px;margin-left:6px;background:#1b2333;border:1px solid var(--line)}
+  .mini.on{background:#243a5c;border-color:var(--accent);color:#cfe0ff}
+  .seg{display:inline-flex;background:#101826;border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+  .seg button{background:transparent;border:0;border-radius:8px;padding:5px 13px;color:var(--sub);font-size:13px}
+  .seg button.on{background:#22304a;color:var(--text);font-weight:600}
+  button.danger{background:#3a1d24;border-color:#5a2a33;color:#ffb3bd}
+  button.danger:hover{border-color:#ff5d5d}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .page-head{display:flex;align-items:baseline;gap:12px;margin:0 0 14px}
+  .page-head h2{margin:0;font-size:19px;font-weight:600}
+  .page-head .sub{color:var(--sub);font-size:12.5px}
+  .badge{display:none;min-width:16px;height:16px;line-height:16px;padding:0 4px;border-radius:8px;background:var(--bad);color:#fff;font-size:10px;text-align:center;margin-left:auto}
+  .badge.show{display:inline-block}
+  @media (max-width:760px){
+    .app{flex-direction:column}
+    .side{width:auto;height:auto;position:static;flex-direction:column;padding:10px 8px 4px}
+    #tabsAll{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px}
+    .sidegroup{display:none}
+    .sidetab{margin:0;white-space:nowrap;padding:7px 10px}
+    .sidefoot{display:none}
+    .stage{padding:12px 10px 28px}
+    .page-head h2{font-size:17px}
+    .grid,.grid2{grid-template-columns:1fr}
+    .card{padding:12px}
+    table{font-size:12px}
+    .stat{padding:6px 10px}
+    .modecard{padding:10px}
+    textarea{min-height:240px}
+  }
+.pdot{width:10px;height:10px;border-radius:50%;background:#5a6478;display:inline-block}
+  .pdot.ok{background:var(--ok)}
+  .pdot.bad{background:#ff7a45}
+.mooddrop{border:1px dashed #2a3550;border-radius:10px;padding:10px;margin-bottom:16px}
+  .mooddrop .thumbs{max-height:96px;overflow:auto}
+  .mooddrop.open .thumbs{max-height:320px}
+  .mooddrop img{-webkit-user-drag:none;user-select:none}
+  .mooddrop.over{border-color:var(--accent);background:#1a2438}
+.memrow{background:#141b29;border:1px solid #1d2740;border-radius:8px;padding:10px;margin-bottom:8px}
+  .memrow summary{cursor:pointer}
+.timehead{font-size:13px;font-weight:600;color:#8fb8ff;letter-spacing:.4px;margin:10px 0 6px;text-align:inherit}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><span class="logo">🐳</span><div><b>大肥鱼</b><div style="font-size:11px;color:#5d6c88">控制台</div></div></div>
+    <div id="tabsAll"></div>
+    <div class="sidefoot"><div id="clock"></div><div style="margin-top:6px"><a href="http://127.0.0.1:6185" target="_blank" style="color:#7fb0ff;text-decoration:none">AstrBot 后台 ↗</a></div><div style="margin-top:6px">一条鱼，一个群，<br>吵吵闹闹。</div></div>
+  </aside>
+  <div class="stage"><div id="pagehead"></div><main id="main"></main></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<!-- 需要重启时的弹窗 -->
+<div id="restartMask" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9998;align-items:center;justify-content:center">
+  <div style="background:var(--card);border:1px solid var(--line);border-radius:14px;padding:24px 26px;max-width:460px;box-shadow:0 18px 50px rgba(0,0,0,.45)">
+    <h3 style="margin:0 0 10px">需要重启才生效</h3>
+    <div id="restartMsg" class="muted" style="line-height:1.7;margin-bottom:18px"></div>
+    <div class="row" style="justify-content:flex-end">
+      <button onclick="closeRestart()">稍后再说</button>
+      <button class="primary" id="restartGo" onclick="doRestart()">现在重启</button>
+    </div>
+    <div id="restartHint" class="muted" style="margin-top:12px;font-size:12px"></div>
+  </div>
+</div>
+
+<script>
+const TAB_GROUPS = [
+  ['日常', ['总览', '消息流', '好友', '空间', '音乐', '人设', '表情库', '声音']],
+  ['系统', ['管理', '日志', '设置']],
+];
+const TAB_ICONS = {'总览':'◎','消息流':'▤','音乐':'♫','人设':'✎','表情库':'☺','设置':'⚙','声音':'♪','空间':'▣','会话':'▭','好友':'☰','日志':'▦','管理':'☷'};
+const fmt = n => (n===null||n===undefined)?'—':n;
+const fmtNum = n => (n===null||n===undefined)?'—':Number(n).toLocaleString('zh-CN');
+let follow=true, curLog='astrbot', curTab='总览';
+const _tabParam = new URLSearchParams(location.search).get('tab') || decodeURIComponent((location.hash || '').slice(1));
+if (_tabParam && TAB_GROUPS[0][1].concat(TAB_GROUPS[1][1]).includes(_tabParam)) curTab = _tabParam;
+
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2600)}
+async function j(url,opt){const r=await fetch(url,opt);if(!r.ok)throw new Error(await r.text());return r.json()}
+
+// 需要重启的改动统一走这个弹窗，让用户自己点
+function askRestart(reason){
+  document.getElementById('restartMsg').textContent = reason || '这项修改要重启才会生效。';
+  document.getElementById('restartHint').textContent = '';
+  const go = document.getElementById('restartGo');
+  go.disabled = false; go.textContent = '现在重启';
+  const mask = document.getElementById('restartMask');
+  mask.style.display = 'flex';
+}
+function closeRestart(){ document.getElementById('restartMask').style.display = 'none'; }
+async function doRestart(){
+  const go = document.getElementById('restartGo');
+  const hint = document.getElementById('restartHint');
+  go.disabled = true; go.textContent = '重启中…';
+  hint.textContent = '正在重启 AstrBot，大约 45 秒，期间机器人不回复。';
+  try{ await act('restart_astrbot'); }catch(e){}
+  let n = 0;
+  const timer = setInterval(async function(){
+    n++;
+    hint.textContent = '重启中… 已等待 ' + (n*3) + ' 秒';
+    try{
+      const r = await fetch('/api/status',{cache:'no-store'});
+      if(r.ok){
+        clearInterval(timer);
+        hint.textContent = '已经好了，页面即将刷新。';
+        setTimeout(()=>location.reload(), 800);
+      }
+    }catch(e){}
+    if(n > 30){ clearInterval(timer); hint.textContent = '没等到响应，请手动刷新页面。'; go.disabled=false; go.textContent='再试一次'; }
+  }, 3000);
+}
+
+let dragTab = null;
+function favOrder(){
+  const base = TAB_GROUPS[0][1];
+  try{
+    const saved = JSON.parse(localStorage.getItem('menuOrder') || '[]');
+    const out = saved.filter(function(t){ return base.includes(t); });
+    base.forEach(function(t){ if(!out.includes(t)) out.push(t); });
+    return out;
+  }catch(e){ return base.slice(); }
+}
+
+async function updateBadges(){
+  try{
+    const d = await j('/api/badges');
+    document.querySelectorAll('.badge').forEach(function(el){
+      const n = d[el.dataset.badge] || 0;
+      el.textContent = n > 99 ? '99+' : String(n);
+      el.classList.toggle('show', n > 0);
+      if(el.dataset.badge === '日志' && d.last_error) el.title = '最近一条错误：' + d.last_error;
+      else if(el.dataset.badge === '空间') el.title = '有草稿等你确认';
+      else if(el.dataset.badge === '好友') el.title = '好友和名单';
+    });
+  }catch(e){}
+}
+
+function renderTabs(){
+  const mk = t => '<div class="sidetab'+(t===curTab?' active':'')+'" draggable="true" data-t="'+t+'">'
+    +'<span class="ic">'+(TAB_ICONS[t]||'·')+'</span>'+t
+    +'<span class="badge" data-badge="'+t+'"></span></div>';
+  const groups = [['日常', favOrder()], ['系统', TAB_GROUPS[1][1]]];
+  document.getElementById('tabsAll').innerHTML = groups.map(function(g){
+    return '<div class="sidegroup">'+g[0]+'</div>'+g[1].map(mk).join('');
+  }).join('');
+  document.querySelectorAll('.sidetab').forEach(function(el){
+    el.onclick = function(){
+      curTab = el.dataset.t;
+      document.querySelectorAll('.sidetab').forEach(function(x){ x.classList.toggle('active', x===el); });
+      render();
+    };
+    el.ondragstart = function(e){
+      dragTab = el.dataset.t;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', dragTab);
+    };
+    el.ondragover = function(e){ e.preventDefault(); el.classList.add('dragover'); };
+    el.ondragleave = function(){ el.classList.remove('dragover'); };
+    el.ondrop = function(e){
+      e.preventDefault();
+      el.classList.remove('dragover');
+      const target = el.dataset.t;
+      if(!dragTab || dragTab===target) return;
+      const order = favOrder();
+      const from = order.indexOf(dragTab), to = order.indexOf(target);
+      if(from<0 || to<0){ dragTab = null; return; }
+      order.splice(from,1); order.splice(to,0,dragTab);
+      localStorage.setItem('menuOrder', JSON.stringify(order));
+      dragTab = null;
+      renderTabs();
+    };
+  });
+  updateBadges();
+}
+renderTabs();
+
+async function refresh(){
+  // 只更新文字，不重建页面，否则会闪
+  try{
+    const s=await j('/api/status');
+    const c=document.getElementById('clock'); if(c) c.textContent=s.time;
+    if(curTab==='总览'){
+      const h=document.getElementById('heroState');
+      if(h){
+        const online = s.ports.astrbot && s.ports.snowluma && s.ports.reverse_ws && !!s.login;
+        h.textContent = online ? '一切正常' : (s.login ? '有服务离线' : 'QQ 掉线了');
+        h.style.color = online ? '' : 'var(--bad)';
+      }
+      const t=document.querySelector('.hero-title');
+      if(t){
+        const online = s.ports.astrbot && s.ports.snowluma && s.ports.reverse_ws && !!s.login;
+        const want = online ? '大肥鱼在线' : (s.login ? '有服务掉线了' : 'QQ 掉线了');
+        const first=t.firstChild;
+        if(first && first.nodeType===3 && first.textContent!==want) first.textContent=want;
+        const dot=t.querySelector('.hero-dot');
+        if(dot) dot.className='hero-dot '+(online?'on':'off');
+      }
+      // 连接卡逐项更新，不重建整张卡，所以不闪
+      document.querySelectorAll('[data-k]').forEach(function(el){
+        const k=el.dataset.k;
+        const ok = k==='qq' ? !!s.login : !!s.ports[k];
+        el.className='dot '+(ok?'on':'off');
+        const st=el.nextElementSibling;
+        if(st && st.classList && st.classList.contains('st')) st.textContent = ok?'正常':'离线';
+      });
+      // 健康卡交给手动刷新按钮，这里不动它，避免结构被破坏
+    }
+    if(curTab==='管理') loadBackup();
+  }catch(e){
+    const c=document.getElementById('clock'); if(c) c.textContent='连接失败';
+  }
+  updateBadges();
+}
+
+function go(t){
+  curTab=t;
+  document.querySelectorAll('.sidetab').forEach(function(x){ x.classList.toggle('active', x.dataset.t===t); });
+  render();
+}
+
+function renderOverview(s){const p=s.ports;const chip=(ok,l,key)=>`<div class="kv"><span>${l}</span><span><i class="dot ${ok?'on':'off'}" data-k="${key}"></i><span class="st">${ok?'正常':'离线'}</span></span></div>`;
+  const qqUp = !!s.login;
+  const online = p.astrbot && p.snowluma && p.reverse_ws && qqUp;
+  const pluginRow = (name, on) => '<div class="kv"><span>'+esc(name)+'</span><span><i class="dot '+(on?'on':'off')+'"></i>'+(on?'运行':'停用')+'</span></div>';
+  const pluginRows = [
+    ...(s.plugins_detail || []).map(p => pluginRow(p.display || p.dir, true)),
+    ...(s.disabled_detail || []).map(p => pluginRow(p.display || p.dir, false)),
+  ].join('');
+  document.getElementById('main').innerHTML=`
+  <div class="hero">
+    <div class="hero-main">
+      <div class="hero-title">${online?'大肥鱼在线':(qqUp?'有服务掉线了':'QQ 掉线了')}<span class="hero-dot ${online?'on':'off'}"></span></div>
+      <div class="hero-sub">${fmt(s.login)||'QQ 未登录'} · ${s.reply_all?'全部消息都接':'只接 / 开头'}</div>
+    </div>
+    <div class="muted" style="font-size:12px;display:flex;align-items:center;gap:10px">
+      <span id="heroState">${online?'一切正常':'有服务离线'}</span>
+      <button onclick="window.open('http://127.0.0.1:6185','_blank')" style="padding:3px 10px;font-size:12px">AstrBot 后台</button>
+      <button onclick="render()" style="padding:3px 10px;font-size:12px">刷新</button>
+    </div>
+  </div>
+
+  <div class="overview-grid" style="margin-top:14px">
+    <div class="card"><h3>连接</h3>${chip(qqUp,'QQ 登录','qq')}${chip(p.reverse_ws,'反向 WS 6199','reverse_ws')}${chip(p.onebot_http,'OneBot 3000','onebot_http')}${chip(p.snowluma,'SnowLuma 5099','snowluma')}${chip(p.astrbot,'AstrBot 6185','astrbot')}${chip(p.panel,'面板 6868','panel')}</div>
+    <div class="card"><h3>插件</h3><div class="plugin-list">${pluginRows}</div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>Token 消耗 <span class="muted">每 10 秒刷新</span></h3>
+    <div class="tokrow">
+      <div class="tokstat"><span>总消耗</span><b id="tokAll" title="所有历史模型调用合计">—</b></div>
+      <div class="tokstat"><span>今日消耗</span><b id="tokToday" title="今天所有会话的模型调用合计">—</b></div>
+      <div class="tokstat"><span>最近 1 分钟</span><b id="tok1">—</b></div>
+      <div class="tokstat"><span>最近 5 分钟</span><b id="tok5">—</b></div>
+    </div>
+  </div>
+  <div class="grid" style="margin-top:14px" id="healthbox"></div>`;
+  loadHealth(); loadTokenRate();
+  if(window.__tokTimer) clearInterval(window.__tokTimer);
+  window.__tokTimer=setInterval(loadTokenRate,10000);
+}
+
+async function loadTokenRate(){
+  const one=document.getElementById('tok1');
+  if(!one){
+    if(window.__tokTimer){ clearInterval(window.__tokTimer); window.__tokTimer=null; }
+    return;
+  }
+  try{
+    const d=await j('/api/token_rate');
+    document.getElementById('tokAll').textContent=fmtNum(d.all_time);
+    document.getElementById('tokToday').textContent=fmtNum(d.today);
+    one.textContent=fmtNum(d.per_minute);
+    document.getElementById('tok5').textContent=fmtNum(d.last_5m);
+  }catch(e){}
+}
+
+async function loadHealth(){
+  const box=document.getElementById('healthbox'); if(!box) return;
+  let h;
+  try{ h=await j('/api/health'); }catch(e){ box.innerHTML='<div class="card"><h3>健康</h3><div class="muted">读不到</div></div>'; return; }
+  const dot=(ok)=>`<i class="dot ${ok?'on':'off'}"></i>${ok?'正常':'异常'}`;
+  const errs=(h.errors||[]).slice(-3).map(function(e){
+    return '<div class="muted" style="font-size:11px;word-break:break-all;margin-top:4px">'+esc(e.slice(0,110))+'</div>';
+  }).join('');
+  box.innerHTML=
+    '<div class="card"><h3>模型与语音</h3>'
+      +'<div class="kv"><span>QQ 登录</span><span id="hqq">'+dot(h.qq_online)+(h.qq_name?' '+esc(h.qq_name):'')+'</span></div>'
+      +'<div class="kv"><span>对话模型</span><span>'+esc(h.chat_model||'—')+'</span></div>'
+      +'<div class="kv"><span>视觉模型</span><span>'+esc(h.vision_model||'—')+'</span></div>'
+      +'<div class="kv"><span>语音合成</span><span>'+dot(h.tts)+'</span></div>'
+      +'<div class="kv"><span>语音开关</span><span>'+(h.voice_on?'开':'关')+'</span></div>'
+    +'</div>'
+    +'<div class="card"><h3>异常</h3>'
+      +'<div class="kv"><span>最近错误</span><span>'+(h.error_count||0)+' 条</span></div>'
+      +(errs||'<div class="muted" style="font-size:12px;margin-top:6px">没有报错</div>')
+    +'</div>';
+}
+
+const PAGE_DESC = {
+  '总览':'服务状态、插件、Token 消耗和健康检查',
+  '消息流':'收发消息记录',
+  '好友':'好友、群聊、白名单和黑名单',
+  '空间':'AI 说说、草稿和每日日记',
+  '音乐':'网易云歌单、收藏和播放记录',
+  '人设':'人格提示词和历史版本',
+  '表情库':'按情绪分组的表情包',
+  '声音':'语音合成和唱歌设置',
+  '日志':'各服务的运行日志',
+  '管理':'模块、插件、工具、备份、维护、体检和名单同步',
+  '设置':'常用开关和路径'
+};
+
+async function render(){
+  const m=document.getElementById('main');
+  const ph=document.getElementById('pagehead');
+  if(ph) ph.innerHTML='<div class="page-head"><h2>'+curTab+'</h2><div class="sub">'+(PAGE_DESC[curTab]||'')+'</div></div>';
+  if(curTab==='总览'){try{renderOverview(await j('/api/status'))}catch(e){m.innerHTML='<div class="card">连接失败</div>'}}
+  else if(curTab==='消息流'){m.innerHTML=`<div class="card">
+    <div class="row" style="margin-bottom:8px">
+      <h3 style="margin:0">消息流</h3>
+      <select id="mf1" onchange="onF1()">
+        <option value="all">全部会话</option>
+        <option value="群聊">群聊</option>
+        <option value="私聊">私聊</option>
+      </select>
+      <select id="mf2" onchange="loadMsgs()"><option value="">全部</option></select>
+      <select id="morder" onchange="loadMsgs()">
+        <option value="desc">最新在上</option>
+        <option value="asc">最早在上</option>
+      </select>
+      <button onclick="cycleMsgAlign()" id="malign">对齐：左</button>
+      <button onclick="loadMsgs() ">刷新</button>
+      <span class="muted" id="mcount"></span><span class="muted" id="mupd"></span>
+    </div>
+    <div class="stream" id="msgs"></div></div>`;f2Ready=false;loadMsgs()}
+  else if(curTab==='音乐'){m.innerHTML=`
+  <div class="card">
+    <div class="row" style="justify-content:space-between;margin-bottom:10px">
+      <h3 style="margin:0">网易云收藏 <span class="muted" id="nstatus"></span></h3>
+      <div class="row">
+        <button onclick="loadNetease()">刷新</button>
+        <button onclick="toggleCookieBox()">换登录态</button>
+      </div>
+    </div>
+    <div id="ncookiebox" style="display:none">
+      <textarea id="ncookie" placeholder="Cookie: MUSIC_U=...; __csrf=..." style="height:64px"></textarea>
+      <div class="row" style="margin-top:6px">
+        <button class="primary" onclick="saveNetCookie()">保存</button>
+        <button onclick="startQrLogin()">扫码登录</button>
+        <span class="muted" id="nqrstate"></span>
+        <span class="muted">只存本机，不上传</span>
+      </div>
+      <details style="margin-top:8px">
+        <summary class="muted" style="cursor:pointer">怎么拿 cookie</summary>
+        <div class="muted" style="margin-top:6px;line-height:1.7">Edge 打开 music.163.com 并登录，按 F12 打开开发者工具，切到网络那一栏，刷新页面，点任意请求，在请求头里找到 Cookie 那一整行复制，粘到上面保存。</div>
+      </details>
+      <img id="nqr" alt="登录二维码" style="display:none;width:170px;height:170px;margin-top:8px;border:1px solid var(--line);border-radius:8px">
+    </div>
+    <div class="row" style="margin-top:4px">
+      <span class="muted">收藏歌单</span>
+      <select id="npl" style="min-width:220px"></select>
+      <button onclick="saveNetTarget()">设为收藏歌单</button>
+      <span class="muted" id="ntarget"></span>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <div class="row" style="justify-content:space-between;margin-bottom:8px">
+      <h3 style="margin:0">最近收藏 <span class="muted" id="ncount"></span></h3>
+      <div class="row" style="gap:8px"><span class="muted">放歌时自动记风格和介绍</span><button onclick="toggleNOrder()" id="norderbtn">排序：最新在上</button></div>
+    </div>
+    <div class="stream" id="nbox"></div>
+  </div>`;loadNetease()}
+  else if(curTab==='管理'){renderManage()}
+  else if(curTab==='设置'){loadSettings()}  else if(curTab==='声音'){loadModels()}
+  else if(curTab==='空间'){loadSpace()}
+  
+  else if(curTab==='好友'){loadContacts()}
+  else if(curTab==='人设'){m.innerHTML=`<div class="card"><h3>人格提示词 <span class="muted" id="pmeta"></span></h3><textarea id="ptext"></textarea><div class="row" style="margin-top:10px"><button class="primary" onclick="savePersona()">保存</button><button onclick="act('restart_astrbot')">保存并重启</button><button onclick="loadPersona()">重新载入</button><button onclick="openPersonaCheck()">人格体检</button><button onclick="openPersonaHistory()">历史版本</button></div><details class="card" id="pcheckWrap" style="margin-top:12px"><summary>人格体检</summary><div id="pcheck" style="margin-top:8px"></div></details><details class="card" id="phistWrap" style="margin-top:12px"><summary>历史版本</summary><div id="phist" style="margin-top:8px"></div></details></div>`;loadPersona()}
+  else if(curTab==='表情库'){m.innerHTML=`<div class="card"><h3>表情库 <span class="muted" id="smeta"></span></h3><div id="sbox"></div></div>`;loadStickers()}
+  else if(curTab==='日志'){m.innerHTML=`<div class="card"><div class="muted" id="errTip" style="margin-bottom:8px"></div><div class="row" style="margin-bottom:8px"><button onclick="loadLog('astrbot')">AstrBot</button><button onclick="loadLog('astrbot_err')">错误</button><button onclick="loadLog('snowluma')">SnowLuma</button><button onclick="loadLog('watchdog')">守护</button><button onclick="loadLog('panel')">面板</button><button onclick="toggleFollow()" id="fbtn">自动刷新：开</button></div><pre id="lbox"></pre></div>`;loadLog(curLog);markLogSeen()}
+}
+
+async function renderManage(){
+  const m=document.getElementById('main');
+  m.innerHTML=`
+  <div class="grid" style="margin-bottom:14px">
+    <div class="card"><h3>管理</h3>
+      <div class="muted" style="font-size:12px;line-height:1.7">模块开关统一写 data/dafeiyu/config.json。AstrBot 的模型、人格、平台设置去它自己后台改，这里不重复做。</div>
+      <div class="row" style="margin-top:10px">
+        <button onclick="window.open('http://127.0.0.1:6185','_blank')">AstrBot 后台</button>
+        <button onclick="askRestart('模块开关改完需要重启 AstrBot 才会生效。')">重启 AstrBot</button>
+      </div>
+    </div>
+    <div class="card"><h3>名单同步</h3>
+      <div id="accSync" class="muted" style="font-size:12px">检查中…</div>
+      <div class="row" style="margin-top:10px"><button onclick="loadAccessSync()">刷新</button><button onclick="syncAccess()">立即同步</button></div>
+    </div>
+  </div>
+  <div class="card"><h3>备份 <span class="muted">每天 03:00 自动</span></h3>
+    <div class="grid" style="gap:0 24px;grid-template-columns:repeat(auto-fill,minmax(180px,1fr))">
+      <div class="kv"><span>最近一次</span><b id="bakTime">—</b></div>
+      <div class="kv"><span>大小</span><b id="bakSize">—</b></div>
+      <div class="kv"><span>每日备份</span><b id="bakCount">—</b></div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <button class="primary" id="bakBtn" onclick="backupNow()">立即备份</button>
+      <button onclick="window.open('/backups','_blank')">查看备份</button>
+      <span class="muted" id="bakMsg"></span>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>维护模式</h3>
+    <div class="row" style="justify-content:space-between;padding:4px 0"><span>开启维护，暂停正常聊天</span>
+      <label class="tgl"><input type="checkbox" id="maintOn" onchange="setMaint(this.checked)"><span></span></label>
+    </div>
+    <div class="muted" style="margin-top:8px;font-size:12px">维护时自动回复</div>
+    <input id="maintMsg" placeholder="维护时回复的话" style="width:100%" onchange="setMaintMsg(this.value)">
+    <div class="muted" style="margin-top:6px;font-size:12px">开启时的提醒</div>
+    <input id="maintOpen" placeholder="开启维护时发给你的话" style="width:100%" onchange="setMaintField('open_message',this.value)">
+    <div class="muted" style="margin-top:6px;font-size:12px">关闭时的提醒</div>
+    <input id="maintClose" placeholder="关闭维护时发给你的话" style="width:100%" onchange="setMaintField('close_message',this.value)">
+    <div class="muted" style="margin-top:6px;font-size:12px">开了谁都聊不了，包括主人；维护提示由插件直接回，不经过模型。</div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>模块 <span class="muted">改完重启 AstrBot</span></h3>
+    <div class="grid" id="moduleGrid" style="gap:10px"><div class="muted">加载中…</div></div>
+  </div>
+  <details class="card" style="margin-top:14px"><summary><b>插件</b> <span class="muted">安装、启停、查看</span></summary>
+    <div class="row" style="margin:10px 0">
+      <input id="newplug" placeholder="装新插件：贴 owner/repo 或 zip 链接" style="flex:1;min-width:220px">
+      <button onclick="installPlug()">安装</button><button onclick="loadPlugins()">刷新</button>
+    </div>
+    <div id="pluglist"></div>
+  </details>
+  <details class="card" style="margin-top:14px"><summary><b>模型工具</b> <span class="muted" id="toolmeta"></span></summary>
+    <div class="muted" style="font-size:12px;margin:8px 0">插件的工具能开关，AstrBot 自带的不让动。</div>
+    <div class="row" style="margin-bottom:8px"><input id="toolsearch" placeholder="搜工具名或来源" oninput="renderToolList()" style="flex:1;max-width:320px"><button onclick="loadAitools()">刷新</button></div>
+    <div id="toollist" style="max-height:420px;overflow:auto"></div>
+  </details>
+  <div class="card" style="margin-top:14px"><h3>体检 <span class="muted">缺什么直接修</span></h3>
+    <div class="row" style="margin-bottom:8px">
+      <button class="primary" onclick="runDoctor()">运行体检</button>
+      <button onclick="repairPatches()">补核心补丁</button>
+      <button onclick="repairAsr()">下语音模型</button>
+      <span class="muted" id="doctorMsg"></span>
+    </div>
+    <pre id="doctorBox" style="display:none"></pre>
+  </div>`;
+  loadModules(); loadAccessSync(); loadBackup(); loadMaint(); loadPlugins(); loadAitools();
+}
+
+function moduleCard(m){
+  return '<div class="card" style="padding:12px;margin:0">'
+    +'<div class="row" style="justify-content:space-between;align-items:flex-start">'
+    +'<div><b>'+esc(m.label)+'</b><div class="muted" style="font-size:11px">'+esc(m.name)+'</div></div>'
+    +'<label class="tgl"><input type="checkbox" '+(m.enabled?'checked':'')+' onchange="toggleModule(\''+m.name+'\',this.checked)"><span></span></label>'
+    +'</div>'
+    +'<div class="muted" style="margin-top:8px;min-height:38px;font-size:12px">'+esc(m.desc)+'</div>'
+    +'<div class="muted" style="font-size:11px"><i class="dot '+(m.running?'on':'off')+'"></i>'+esc(m.status)+'</div>'
+    +'</div>';
+}
+
+async function loadModules(){
+  const box=document.getElementById('moduleGrid');
+  if(!box) return;
+  try{
+    const d=await j('/api/modules');
+    box.innerHTML=d.modules.map(moduleCard).join('');
+  }catch(e){ box.innerHTML='<div class="muted">读取模块失败：'+esc(e.message)+'</div>'; }
+}
+
+async function toggleModule(name, on){
+  try{
+    const r=await j('/api/modules/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,enabled:on})});
+    toast(r.msg||'已保存');
+    loadModules();
+  }catch(e){ toast('保存失败'); loadModules(); }
+}
+
+async function loadAccessSync(){
+  const box=document.getElementById('accSync');
+  if(!box) return;
+  try{
+    const d=await j('/api/access/status');
+    if(d.synced){ box.innerHTML='<span style="color:var(--ok)">已同步</span> · 名单 '+d.expected+' 个会话'; return; }
+    let extra='';
+    if((d.missing||[]).length) extra+='<br>AstrBot 少：'+esc(d.missing.slice(0,4).join(', '));
+    if((d.extra||[]).length) extra+='<br>AstrBot 多：'+esc(d.extra.slice(0,4).join(', '));
+    box.innerHTML='<span style="color:var(--warn)">不同步</span> · 名单 '+d.expected+' / AstrBot '+d.actual+extra;
+  }catch(e){ box.textContent='读取失败'; }
+}
+
+async function syncAccess(){
+  try{
+    const r=await j('/api/access/sync',{method:'POST'});
+    toast(r.msg||'已同步');
+    loadAccessSync();
+  }catch(e){ toast('同步失败：'+e.message); }
+}
+
+async function runDoctor(){
+  const box=document.getElementById('doctorBox');
+  const msg=document.getElementById('doctorMsg');
+  if(!box) return;
+  box.style.display='block'; box.textContent='正在体检…'; msg.textContent='';
+  try{
+    const r=await j('/api/doctor');
+    box.textContent=r.text||'（没有输出）';
+    msg.textContent=r.ok?'全部通过':'有问题，看下面';
+    msg.style.color=r.ok?'var(--ok)':'var(--warn)';
+  }catch(e){ box.textContent='体检失败：'+e.message; }
+}
+
+async function repairPatches(){
+  const msg=document.getElementById('doctorMsg');
+  if(msg) msg.textContent='正在打补丁…';
+  try{
+    const r=await j('/api/repair/patches',{method:'POST'});
+    toast(r.msg||'已处理');
+    await runDoctor();
+  }catch(e){ toast('打补丁失败：'+e.message); }
+}
+
+async function repairAsr(){
+  try{
+    const r=await j('/api/repair/asr',{method:'POST'});
+    toast(r.msg||'已开始');
+  }catch(e){ toast('下载失败：'+e.message); }
+}
+
+let msgCache=[]; let f2Ready=false;
+function onF1(){
+  const f1=document.getElementById('mf1').value;
+  const f2=document.getElementById('mf2');
+  const convs=[...new Set(msgCache.filter(function(x){return f1==='all'||x.where===f1}).map(function(x){return x.conv||''}))].filter(Boolean);
+  f2.innerHTML='<option value="">全部</option>'+convs.map(function(c){
+    return '<option value="'+esc(c)+'">'+esc(c)+'</option>';
+  }).join('');
+  loadMsgs();
+}
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function toggleTxt(a){
+  const box=a.previousElementSibling;
+  if(!box) return;
+  const clamped=box.classList.toggle('clamp');
+  a.textContent=clamped?'展开全文':'收起';
+}
+async function loadMsgs2(){}
+let quickData=[];
+let quickFilter='';
+let quickFavOnly=false;
+const FAV_KEY='dsh_fav_quick';
+
+function favList(){ try{ return JSON.parse(localStorage.getItem(FAV_KEY)||'[]'); }catch(e){ return []; } }
+function isFav(plugin,path){ return favList().indexOf(plugin+'|'+path)>=0; }
+function toggleFav(plugin,path){
+  let f=favList();
+  const k=plugin+'|'+path;
+  const i=f.indexOf(k);
+  if(i>=0) f.splice(i,1); else f.push(k);
+  localStorage.setItem(FAV_KEY, JSON.stringify(f));
+  renderQuickList();
+  toast(i>=0?'已取消收藏':'已收藏，会排到最上面');
+}
+
+async function loadQuick(){
+  try{ quickData=(await j('/api/quick')).items||[]; }catch(e){ quickData=[]; }
+  renderQuickSections();
+}
+
+function renderQuickSections(){
+  const map={'对话':'qset-dialog','主动消息':'qset-auto','语音':'qset-voice'};
+  Object.keys(map).forEach(function(g){
+    const box=document.getElementById(map[g]); if(!box) return;
+    const items=(quickData||[]).filter(function(it){ return it.group===g; });
+    box.innerHTML=items.length?items.map(quickRow).join(''):'<div class="muted" style="padding:8px">没有可调的项</div>';
+  });
+}
+
+function quickRow(it){
+  const pid=it.plugin, path=it.path;
+  let ctrl='';
+  if(it.type==='bool'){
+    ctrl='<input type="checkbox" style="width:auto" '+(it.value?'checked':'')
+      +' onchange="saveQuick(\''+pid+'\',\''+path+'\',this.checked,this)">';
+  }else if(it.type==='int'){
+    ctrl='<input type="number" value="'+(it.value==null?'':it.value)+'" style="width:90px" '
+      +'onchange="saveQuick(\''+pid+'\',\''+path+'\',parseInt(this.value||\'0\',10),this)">';
+  }else if(it.type==='list' && it.options && it.options.length){
+    const cur=it.value||[];
+    ctrl='<select multiple size="'+(Math.min(6,Math.max(3,it.options.length)))+'" style="width:340px" '
+      +'onchange="saveQuick(\''+pid+'\',\''+path+'\',Array.from(this.selectedOptions).map(function(o){return o.value}),this)">'
+      + it.options.map(function(o){
+          return '<option value="'+esc(o.value)+'" '+(cur.indexOf(o.value)>=0?'selected':'')+'>'+esc(o.label)+'</option>';
+        }).join('')
+      +'</select>';
+  }else if(it.type==='list'){
+    const v=(it.value||[]).join(',');
+    ctrl='<input type="text" value="'+String(v).replace(/"/g,'&quot;')+'" style="width:300px" '
+      +'onchange="saveQuick(\''+pid+'\',\''+path+'\',this.value.split(\',\').map(function(s){return s.trim()}).filter(Boolean),this)">';
+  }else if(it.type==='reply_mode'){
+    ctrl='<select onchange="saveQuick(\''+pid+'\',\''+path+'\',this.value,this)">'
+      +'<option '+(it.value==='全部消息都接'?'selected':'')+'>全部消息都接</option>'
+      +'<option '+(it.value==='只接 / 开头'?'selected':'')+'>只接 / 开头</option></select>';
+  }else{
+    ctrl='<input type="text" value="'+String(it.value==null?'':it.value).replace(/"/g,'&quot;')+'" '
+      +'onchange="saveQuick(\''+pid+'\',\''+path+'\',this.value,this)">';
+  }
+  const star=isFav(pid,path)?'★':'☆';
+  const starColor=isFav(pid,path)?'var(--warn, #f0c36d)':'var(--muted, #7b8ea8)';
+  return '<div class="qrow">'
+    +'<div class="qlabel"><b>'+esc(it.label)+'</b>'
+      +(it.hint?'<div class="muted" style="font-size:11px">'+esc(it.hint)+'</div>':'')+'</div>'
+    +'<div class="qctrl">'+ctrl+'</div>'
+    +'<button class="qstar" title="收藏" onclick="toggleFav(\''+pid+'\',\''+path+'\')" '
+      +'style="color:'+starColor+';background:none;border:none;font-size:18px;cursor:pointer">'+star+'</button>'
+    +'</div>';
+}
+
+function renderQuickList(){
+  const box=document.getElementById('quickset'); if(!box) return;
+  const q=(quickFilter||'').trim().toLowerCase();
+  const items=(quickData||[]).filter(function(it){
+    if(quickFavOnly && !isFav(it.plugin,it.path)) return false;
+    if(q){
+      const s=((it.label||'')+' '+(it.hint||'')+' '+(it.group||'')).toLowerCase();
+      if(s.indexOf(q)<0) return false;
+    }
+    return true;
+  });
+  if(!items.length){
+    box.innerHTML='<div class="muted" style="padding:16px 0">没有匹配的设置项</div>';
+    return;
+  }
+  const favs=items.filter(function(it){return isFav(it.plugin,it.path)});
+  const rest=items.filter(function(it){return !isFav(it.plugin,it.path)});
+
+  let html='';
+  if(favs.length){
+    html+='<div class="qgroup"><span class="qtag">★ 常用</span></div>'+favs.map(quickRow).join('');
+  }
+  const groups={};
+  rest.forEach(function(it){ (groups[it.group]=groups[it.group]||[]).push(it) });
+  Object.keys(groups).forEach(function(g){
+    html+='<div class="qgroup"><span class="qtag">'+esc(g)+'</span></div>'
+      + groups[g].map(quickRow).join('');
+  });
+  box.innerHTML=html;
+}
+async function saveQuick(plugin,path,value,el){
+  // 静默保存：不弹重启，只在行内提示，这样多选框按住 Ctrl 连点不会被打断
+  try{
+    await j('/api/quick',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({plugin:plugin,path:path,value:value})});
+    const row=el && el.closest ? el.closest('.qrow') : null;
+    if(row){
+      let tip=row.querySelector('.qsave');
+      if(!tip){ tip=document.createElement('span'); tip.className='qsave'; row.appendChild(tip); }
+      tip.innerHTML = plugin==='astrbot_plugin_dafeiyu_voice'
+        ? '已保存'
+        : '已保存 <a href="javascript:void(0)" onclick="askRestart(\'这项改动要重启才生效\')">重启生效</a>';
+    }else{
+      toast('已保存');
+    }
+  }catch(e){ toast('保存失败') }
+}
+
+async function loadVoice(){
+  const box=document.getElementById('vlist'); if(!box) return;
+  const d=await j('/api/voice'); const cfg=d.cfg||{};
+  const row=function(label,sub,ctrl){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)">'
+      +'<div><b>'+label+'</b><div class="muted" style="font-size:12px">'+sub+'</div></div><div>'+ctrl+'</div></div>';
+  };
+  const sw=function(key,on){
+    return '<input type="checkbox" style="width:auto" '+(on?'checked':'')
+      +' onchange="setVoice(\''+key+'\', this.checked)">';
+  };
+  box.innerHTML =
+    row('语音说话','关了就只打字，不会合成语音', sw('voice_enable', cfg.voice_enable!==false))
+   + row('GPT-SoVITS 服务','语音合成用的，占用显卡和内存', d.sovits_running?'运行中':'未运行')
+   +'<div style="padding:10px 0">'
+   + (d.sovits_running
+        ? '<button onclick="sovitsCtl(\'stop\')">停止服务</button>'
+        : '<button class="primary" onclick="sovitsCtl(\'start\')">启动服务</button>')
+   + '</div>';
+}
+async function setVoice(key,val){
+  await j('/api/voice',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:key,value:val})});
+  toast('已保存：'+key+'='+val); loadVoice();
+}
+async function sovitsCtl(action){
+  const r=await j('/api/sovits',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:action})});
+  toast(r.message||'完成'); setTimeout(loadVoice,1500);
+}
+let msgAlign=localStorage.getItem('msgAlign')||'left';
+function applyMsgAlign(){
+  const box=document.getElementById('msgs');
+  if(box) box.style.textAlign=msgAlign;
+  const btn=document.getElementById('malign');
+  if(btn) btn.textContent='对齐：'+(msgAlign==='left'?'左':msgAlign==='center'?'中':'右');
+}
+function cycleMsgAlign(){
+  msgAlign = msgAlign==='left' ? 'center' : (msgAlign==='center' ? 'right' : 'left');
+  localStorage.setItem('msgAlign', msgAlign);
+  applyMsgAlign();
+}
+
+async function loadMsgs(){
+  const ordEl=document.getElementById('morder');
+  const ord=ordEl?ordEl.value:'desc';
+  const d=await j('/api/messages?lines=300&order='+ord);
+  msgCache=d;
+  const f1El=document.getElementById('mf1'), f2El=document.getElementById('mf2');
+  if(!f1El) return;
+  const f1=f1El.value, f2=f2El?f2El.value:'';
+  // 首次进入时填充二级菜单（只做一次，避免递归）
+  if(f2El && !f2Ready){f2Ready=true; onF1(); return;}
+  const rows=d.filter(function(x){
+    if(f1!=='all' && x.where!==f1) return false;
+    if(f2 && (x.conv||'')!==f2) return false;
+    return true;
+  });
+  const upd=document.getElementById('mupd'); if(upd) upd.textContent='最后更新 '+new Date().toLocaleTimeString('zh-CN');
+  const cnt=document.getElementById('mcount');
+  if(cnt) cnt.textContent='共 '+rows.length+' 条';
+  document.getElementById('msgs').innerHTML=rows.map(function(x){
+    const who=x.dir==='in'?(x.sender||'群友'):'大肥鱼';
+    const where=(x.where||'')+(x.conv?' · '+x.conv:'');
+    const raw=x.text||'';
+    const long=raw.length>90 || raw.indexOf('\n')>=0;
+    let body='<div class="mtext'+(long?' clamp':'')+'">'+esc(raw)+'</div>';
+    if(long){body+='<a href="javascript:void(0)" class="expand" onclick="toggleTxt(this)">展开全文</a>';}
+    if(x.image){body+='<div><img class="msgimg" src="/api/image/'+encodeURIComponent(x.image)+'" loading="lazy" onclick="window.open(this.src)"></div>';}
+    return '<div style="padding:8px 0;border-bottom:1px solid #0e1420">'
+      +'<div class="timehead">'+x.time+'</div>'
+      +'<div style="margin-bottom:2px"><span class="tag '+(x.dir==='in'?'in':'out')+'">'+(x.dir==='in'?'收':'发')+'</span><span class="muted">'+where+'</span> <b>'+who+'</b></div>'
+      +body+'</div>';
+  }).join(''); applyMsgAlign()}
+
+let vtTab='tts';
+function setVtTab(t){ vtTab=t; loadModels(); }
+async function loadModels(){
+  const m=document.getElementById('main');
+  const bar=`<div class="seg" style="margin-bottom:12px">
+    <button class="${vtTab==='tts'?'on':''}" onclick="setVtTab('tts')">TTS 说话</button>
+    <button class="${vtTab==='rvc'?'on':''}" onclick="setVtTab('rvc')">RVC 唱歌</button>
+  </div>`;
+  if(vtTab==='rvc'){
+    let d;
+    try{ d=await j('/api/rvc'); }catch(e){ m.innerHTML=bar+'<div class="card">读取唱歌模型失败：'+esc(e.message)+'</div>'; return; }
+    const cur=(d.current&&d.current.name)?d.current.name:'（未选择）';
+    const rows=(d.models||[]).map(x=>{
+      const active=(d.current&&d.current.name===x.name)?' style="background:rgba(120,180,255,.12)"':'';
+      return `<tr${active}><td><b>${esc(x.name)}</b></td><td class="muted">${esc(x.pth)}</td>
+        <td>${x.index?'有':'<span class="muted">无</span>'}</td><td>${x.mb} MB</td>
+        <td><button onclick="switchRvc('${esc(x.name)}')">切换</button></td></tr>`;
+    }).join('');
+    m.innerHTML=bar+`<div class="card"><h3>唱歌模型 <span class="muted">当前：${esc(cur)}</span></h3>
+      <div class="muted" style="margin:6px 0 10px">从 ${esc(d.root)}\\models 读取。每个角色一个文件夹，放 .pth，.index 可选。</div>
+      <div class="row" style="margin-bottom:8px"><button onclick="loadModels()">重新扫描</button>
+        <span class="muted">${d.runtime_ready?'RVC 环境就绪':'RVC 环境未安装'}</span></div>
+      <table><tr><th>模型</th><th>权重</th><th>索引</th><th>大小</th><th></th></tr>${rows||'<tr><td colspan=5 class="muted">还没有唱歌模型</td></tr>'}</table>
+      <div class="row" style="margin-top:14px">
+        <input id="singq" placeholder="试唱一首，填歌名" style="width:220px">
+        <button onclick="runSingTest()">试唱</button>
+        <span class="muted" id="singstate"></span>
+      </div>
+      <div id="singout" style="margin-top:10px"></div>
+      <div class="muted" style="margin-top:10px">按语言自动选：中文 → ${esc((d.map&&d.map.zh&&d.map.zh.name)||'—')}，日语 → ${esc((d.map&&d.map.ja&&d.map.ja.name)||'—')}。唱歌时先分离人声，再换音色，最后和伴奏混回去。</div></div>`;
+    return;
+  }
+  let d;
+  try{ d = await j('/api/models'); }catch(e){ m.innerHTML=bar+'<div class="card">读取模型失败：'+e.message+'</div>'; return; }
+  const cur = d.current || {};
+  const curName = cur.name || '（未选择）';
+  const rows = (d.models||[]).map(x=>{
+    const active = (cur.sovits && cur.sovits===x.sovits) ? ' style="background:rgba(120,180,255,.12)"' : '';
+    const emo = x.emotion_root ? '有情绪素材' : '无情绪素材';
+    return `<tr${active}>
+      <td><b>${x.name}</b></td>
+      <td class="muted">${x.gpt.split('\\').pop()}</td>
+      <td class="muted">${x.sovits.split('\\').pop()}</td>
+      <td>${emo}</td>
+      <td>${x.heavy?'<span style="color:#e5a13a">大模型·慢</span>':'<span style="color:#5aa469">标准·快</span>'}</td>
+      <td><button onclick='switchModel(${JSON.stringify(JSON.stringify(x))})'>切换</button></td>
+    </tr>`;
+  }).join('');
+  m.innerHTML = bar+`<div class="card"><h3>说话模型 <span class="muted">当前：${curName}</span></h3>
+    <div class="muted" style="margin:6px 0 10px">从 ${d.root} 读取。把新模型（.ckpt + .pth）放进去，刷新本页就能看到。</div>
+    <div class="row" style="margin-bottom:8px"><button onclick="loadModels()">重新扫描</button></div>
+    <table><tr><th>模型</th><th>GPT</th><th>SoVITS</th><th>情绪</th><th>速度</th><th></th></tr>${rows||'<tr><td colspan=5 class="muted">没找到模型</td></tr>'}</table>
+    <div class="muted" style="margin-top:10px">切换会立刻挂载权重，并把情绪素材指向这个模型。说话时由模型判断情绪，再从对应文件夹挑一条 3~10 秒的参考音频。</div>
+  </div>`;
+}
+async function switchRvc(name){
+  if(!confirm('把唱歌模型切换到「'+name+'」？'))return;
+  try{
+    await j('/api/rvc/switch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name})});
+    toast('已切换到 '+name);
+    loadModels();
+  }catch(e){ toast('切换失败：'+e.message); }
+}
+
+async function runSingTest(){
+  const q=document.getElementById('singq');
+  const st=document.getElementById('singstate');
+  const box=document.getElementById('singout');
+  const song=((q&&q.value)||'').trim();
+  if(!song){ toast('先填歌名'); return; }
+  st.textContent='唱中…大概半分钟到一分钟';
+  box.innerHTML='';
+  try{
+    const d=await j('/api/sing_test',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({song:song,seconds:25})});
+    if(!d.ok){ st.textContent='失败了'; box.innerHTML='<pre class="muted" style="white-space:pre-wrap">'+esc(d.error||'')+'</pre>'; return; }
+    st.textContent='唱完了';
+    box.innerHTML='<audio controls src="'+esc(d.url)+'" style="width:100%"></audio>';
+  }catch(e){ st.textContent='失败了'; box.innerHTML='<div class="muted">'+esc(e.message)+'</div>'; }
+}
+
+let personaCheckBusy=false, personaHistBusy=false;
+async function openPersonaCheck(){
+  const w=document.getElementById('pcheckWrap'); if(w) w.open=true;
+  if(personaCheckBusy) return;
+  personaCheckBusy=true;
+  try{ await runPersonaCheck(); } finally { personaCheckBusy=false; }
+}
+async function openPersonaHistory(){
+  const w=document.getElementById('phistWrap'); if(w) w.open=true;
+  if(personaHistBusy) return;
+  personaHistBusy=true;
+  try{ await loadPersonaHistory(); } finally { personaHistBusy=false; }
+}
+
+async function runPersonaCheck(){
+  const box=document.getElementById('pcheck');
+  box.innerHTML='<div class="muted">体检中…</div>';
+  try{
+    const d=await j('/api/persona_check');
+    if(d.error){ box.innerHTML='<pre class="muted" style="white-space:pre-wrap">'+esc(d.error)+'</pre>'; return; }
+    const lines=(d.findings||[]).slice(0,10).map(function(f){
+      return '['+f.level+'] '+f.desc+'：'+String(f.text||'').slice(0,40);
+    });
+    box.innerHTML='<pre style="white-space:pre-wrap;margin:0">检查 '+d.checked+' 条　ERROR '+d.errors+'　WARN '+d.warns+'\n'+(lines.join('\n')||'没挑出问题')+'</pre>';
+  }catch(e){ box.innerHTML='<pre class="muted">失败：'+esc(e.message)+'</pre>'; }
+}
+async function switchModel(jsonStr){
+  const x = JSON.parse(jsonStr);
+  if(!confirm('切换到「'+x.name+'」？\n\n会立即加载权重，正在进行的语音可能会中断。'))return;
+  toast('切换中，请稍等…');
+  try{
+    const r = await j('/api/models/switch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      gpt:x.gpt, sovits:x.sovits, name:x.name, emotion_root:x.emotion_root, ref_audio:x.ref_audio, prompt:x.prompt
+    })});
+    toast('已切换到 '+x.name + (r.plugin_updated?'（参考素材已更新）':''));
+    loadModels();
+  }catch(e){ toast('切换失败：'+e.message); }
+}
+
+async function loadSessions(){const m=document.getElementById('main');const d=await j('/api/sessions');
+  m.innerHTML=`<div class="card"><h3>会话（点击清空上下文）</h3><p class="muted">清空只删对话历史，不影响人设、记忆、配置和累计 token。清空后机器人会忘记之前的聊天内容，无法恢复。</p><div style="margin:8px 0"><button class="danger" onclick="clearAllSess()">清空全部会话</button></div><table><tr><th style="width:70px">类型</th><th>会话</th><th>累计 token</th><th>字符</th><th>更新</th><th></th></tr>
+    ${d.map(s=>`<tr><td>${s.kind==='群聊'?'<span style="color:var(--ok)">群聊</span>':(s.kind==='私聊'?'<span style="color:#7fb0ff">私聊</span>':s.kind)}</td><td>${esc(s.display||s.umo)}</td><td>${fmt(s.tokens)}</td><td>${fmt(s.chars)}</td><td>${s.updated}</td><td><button class="danger" onclick="clearSess('${s.id}')">清空</button></td></tr>`).join('')}</table></div>`}
+async function clearSess(id){
+  if(!confirm('确定清空这个会话的上下文吗？\n\n清空后机器人会忘记之前的聊天内容，只保留人设和个人档案，且无法恢复。'))return;
+  try{
+    await j('/api/session/clear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conversation_id:id})});
+    toast('已清空');
+    if(typeof loadContacts==='function' && contactData) loadContacts();
+    else loadSessions();
+  }catch(e){ toast('清空失败：'+e.message); }
+}
+async function clearAllSess(){
+  if(!confirm('确定清空全部会话的上下文吗？\n\n所有聊天历史都会被删除，机器人会忘记之前的所有对话，只保留人设和个人档案，且无法恢复。'))return;
+  const r=await j('/api/session/clear_all',{method:'POST'});
+  toast('已清空 '+(r.affected||0)+' 个会话');loadSessions()}
+
+async function loadSettings(){
+  const m=document.getElementById('main');
+  m.innerHTML=`<div class="card"><h3>设置</h3>
+      <div class="muted" style="font-size:12px">模型、人格、平台这些去 AstrBot 后台；这里只放常用开关和路径。</div></div>
+    <details class="card" style="margin-top:12px" open><summary><b>对话</b> <span class="muted">本鱼怎么接话、记不记得住</span></summary><div id="qset-dialog" style="margin-top:8px"></div></details>
+    <details class="card" style="margin-top:12px"><summary><b>主动消息</b> <span class="muted">本鱼什么时候自己冒泡</span></summary><div id="qset-auto" style="margin-top:8px"></div></details>
+    <details class="card" style="margin-top:12px"><summary><b>语音</b> <span class="muted">本鱼出不出声、一次说多少</span></summary><div id="qset-voice" style="margin-top:8px"></div></details>
+    <details class="card" style="margin-top:12px"><summary><b>路径</b> <span class="muted">本鱼的家当放哪儿</span></summary>
+      <div class="muted" style="font-size:12px;margin:8px 0">空着本鱼自己找得到；改完得重启才认。</div>
+      <div style="display:grid;grid-template-columns:14px 150px minmax(0,1fr);gap:10px 12px;align-items:center">
+        <span class="pdot" id="dotTts"></span><label>音色模型目录</label><input id="pathTts" oninput="checkPath('tts_root','pathTts','dotTts')" placeholder="D:\\GPT-SoVITS\\models">
+        <span class="pdot" id="dotRvc"></span><label>RVC 目录</label><input id="pathRvc" oninput="checkPath('rvc_root','pathRvc','dotRvc')" placeholder="D:\\QQBot\\rvc">
+        <span class="pdot" id="dotRvcPkg"></span><label>RVC 整合包</label><input id="pathRvcPkg" oninput="checkPath('rvc_pkg','pathRvcPkg','dotRvcPkg')" placeholder="...\\pkg\\RVC...">
+        <span class="pdot" id="dotMap"></span><label>model_map.json</label><input id="pathMap" oninput="checkPath('model_map','pathMap','dotMap')" placeholder="...\\rvc\\model_map.json">
+        <span class="pdot" id="dotFfmpeg"></span><label>ffmpeg.exe</label><input id="pathFfmpeg" oninput="checkPath('ffmpeg','pathFfmpeg','dotFfmpeg')" placeholder="...\\bin\\ffmpeg.exe">
+      </div>
+      <div class="row" style="margin-top:10px"><button onclick="detectPaths()">自动检测</button><button class="primary" onclick="savePaths()">保存</button></div>
+    </details>`;
+  loadQuick(); loadPaths();
+}
+
+function loadSpace(){
+  const m=document.getElementById('main');
+  m.innerHTML=`<div class="card"><h3>AI 说说</h3>
+      <div class="muted" style="margin-bottom:8px">大肥鱼隔一阵看一眼最近聊天，自己决定发不发，每天最多一条。发之前要不要你点头，选一个：</div>
+      <div class="grid2">
+        <div class="modecard" id="modeDraft" onclick="setAiMode('draft')">
+          <b>都先给我看</b>
+          <div class="muted">每条都存草稿，你点发布才发出去。</div>
+        </div>
+        <div class="modecard" id="modeAuto" onclick="setAiMode('auto')">
+          <b>都直接发</b>
+          <div class="muted">它觉得想发就直接发，不问你。</div>
+        </div>
+        <div class="modecard" id="modeBoth" onclick="setAiMode('both')">
+          <b>两种都开（推荐）</b>
+          <div class="muted">普通说说直接发；它拿不准、涉及具体人或敏感内容的，留草稿给你看。</div>
+        </div>
+      </div>
+      <div class="row" style="justify-content:space-between;padding:10px 0 0;border-top:1px solid #0e1420;margin-top:10px">
+        <span>总开关：让它发说说</span>
+        <label class="tgl"><input type="checkbox" id="qaien" onchange="setQzoneAI('enabled',this.checked)"><span></span></label>
+      </div>
+      <div class="row" style="margin-top:8px"><button id="qaibtn" onclick="qzoneAICheck()">现在让它想一次</button><span class="muted" id="qaistat"></span></div>
+      <div id="qaibox" style="margin-top:8px"></div>
+    </div>
+    <div class="card" style="margin-top:12px"><h3>每日日记 <span class="muted">总结当天聊天发到空间</span></h3>
+      <div class="row" style="justify-content:space-between;padding:6px 0">
+        <span>每天自动写一篇</span>
+        <label class="tgl"><input type="checkbox" id="qdiary" onchange="setDiary('enabled',this.checked)"><span></span></label>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <span class="muted">时间</span>
+        <input id="qdiarytime" type="time" value="20:00" style="width:120px" onchange="setDiary('time',this.value)">
+        <button onclick="writeDiaryNow()">现在写一篇</button>
+        <span class="muted" id="qdiarystat"></span>
+      </div>
+      <div class="muted" style="font-size:12px;margin-top:6px">到点会把今天的聊天总结成一篇日记，直接发到空间，不发你说说也不打扰你。</div>
+    </div>
+    <div class="card" style="margin-top:12px"><h3>评论好友的说说</h3>
+      <div class="row" style="justify-content:space-between;padding:4px 0">
+        <span>每天上午 8 点前后，挑好友最近的一条说说评论</span>
+        <label class="tgl"><input type="checkbox" id="qzcom" onchange="toggleQzone('comment',this.checked)"><span></span></label>
+      </div>
+      <div class="row" style="margin-top:6px"><button onclick="askRestart('评论开关改了，要重启 AstrBot 才生效。')">重启 AstrBot 生效</button></div>
+      <div class="muted" style="font-size:12px;margin-top:6px">评论有风险，可能被当成骚扰，默认关着。</div>
+    </div>`;
+  loadQzone(); loadQzoneAI(); loadDiary();
+}
+
+async function setAiMode(mode){
+  try{
+    await j('/api/qzone_ai/set',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:mode})});
+    toast(mode==='draft'?'改成都先给我看':(mode==='auto'?'改成都直接发':'改成两种都开'));
+    loadQzoneAI();
+  }catch(e){ toast('失败：'+e.message); }
+}
+
+async function loadDiary(){
+  try{
+    const d = await j('/api/qzone_diary');
+    const el = document.getElementById('qdiary');
+    if(el) el.checked = !!d.enabled;
+    const tm = document.getElementById('qdiarytime');
+    if(tm) tm.value = d.time || '20:00';
+    const st = document.getElementById('qdiarystat');
+    if(st) st.textContent = d.pending ? '正在写…' : (d.last ? ('上次：'+d.last+(d.result?(' · '+d.result):'')) : '还没写过');
+  }catch(e){}
+}
+
+async function setDiary(field, value){
+  try{
+    const body = {}; body[field] = value;
+    await j('/api/qzone_diary',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    toast(field==='enabled' ? (value?'每天自动写日记':'关掉了日记') : '时间改好了');
+    loadDiary();
+  }catch(e){ toast('失败：'+e.message); }
+}
+
+async function writeDiaryNow(){
+  try{
+    await j('/api/qzone_diary',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({now:true})});
+    toast('开始写了，写好后状态会自己更新');
+    loadDiary();
+    let n=0;
+    const timer=setInterval(async function(){
+      n++;
+      await loadDiary();
+      const el=document.getElementById('qdiarystat');
+      if(!el || !el.textContent.includes('正在写') || n>=60){ clearInterval(timer); }
+    },5000);
+  }catch(e){ toast('失败：'+e.message); }
+}
+
+async function loadQzone(){
+  try{
+    const d=await j('/api/qzone');
+    const com=document.getElementById('qzcom');
+    if(!com) return;
+    if(!d.ok){ com.disabled=true; return; }
+    com.checked=!!d.comment;
+  }catch(e){}
+}
+
+async function toggleQzone(key,on){
+  try{
+    await j('/api/qzone/switch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:key,on:on})});
+    toast(on?'评论已打开，重启 AstrBot 后生效':'评论已关闭，重启 AstrBot 后生效');
+  }catch(e){ toast('设置失败：'+e.message); }
+}
+
+async function loadQzoneAI(){
+  try{
+    const d=await j('/api/qzone_ai');
+    const st=d.state||{}, drafts=d.drafts||[];
+    const en=document.getElementById('qaien');
+    if(en) en.checked=!!st.enabled;
+    const btn=document.getElementById('qaibtn');
+    if(btn){ btn.disabled=!st.enabled; btn.title=st.enabled?'':'先打开总开关'; }
+    const md=document.getElementById('modeDraft'), ma=document.getElementById('modeAuto'), mb=document.getElementById('modeBoth');
+    const m=st.mode||'both';
+    if(md) md.classList.toggle('on', m==='draft');
+    if(ma) ma.classList.toggle('on', m==='auto');
+    if(mb) mb.classList.toggle('on', m==='both');
+    const stat=document.getElementById('qaistat');
+    if(stat) stat.textContent=(st.last_post_date?('上次发：'+st.last_post_date):'还没发过')+' · '+(st.last_result?('上次判断：'+st.last_result+' · '):'')+'每'+(st.interval_min||90)+'分钟看一次';
+    const box=document.getElementById('qaibox');
+    if(!box) return;
+    box.innerHTML=drafts.length?drafts.map(function(x){
+      return '<div style="padding:8px 6px;border-top:1px solid #0e1420"><div class="muted">'+esc(x.time||'')+'</div>'
+        +'<div>'+esc(x.text||'')+'</div>'
+        +'<div class="muted" style="font-size:12px;margin-top:2px">'+(x.reason?('为什么发：'+esc(x.reason)):'')+'</div>'
+        +'<div class="row" style="margin-top:6px">'
+        +'<button class="mini" data-id="'+esc(x.id)+'" data-act="publish" onclick="actDraft(this)">发布</button>'
+        +'<button class="mini danger" data-id="'+esc(x.id)+'" data-act="discard" onclick="actDraft(this)">丢掉</button></div></div>';
+    }).join(''):'<div class="muted">还没有草稿</div>';
+  }catch(e){}
+}
+
+async function setQzoneAI(field,on){
+  try{ await j('/api/qzone_ai/set',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({[field]:on})}); toast(on?'已打开':'已关掉'); loadQzoneAI(); }
+  catch(e){ toast('失败：'+e.message); }
+}
+
+async function setQzoneAIMode(draftOn){
+  try{ await j('/api/qzone_ai/set',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:draftOn?'draft':'auto'})}); toast(draftOn?'先存草稿':'会自动发'); loadQzoneAI(); }
+  catch(e){ toast('失败：'+e.message); }
+}
+
+async function qzoneAICheck(){
+  try{ const r=await j('/api/qzone_ai/check',{method:'POST'}); toast(r.msg||'已让它判断'); }
+  catch(e){ toast('失败：'+e.message); }
+}
+
+async function actDraft(btn){
+  try{
+    const r=await j('/api/qzone_ai/draft',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:btn.dataset.id,action:btn.dataset.act})});
+    toast(r.ok?(btn.dataset.act==='publish'?'已发布':'已丢掉'):('失败：'+(r.error||r.err||'')));
+    loadQzoneAI(); updateBadges();
+  }catch(e){ toast('失败：'+e.message); }
+}
+
+let toolData=[];
+async function loadAitools(){
+  const box=document.getElementById('toollist'); if(!box) return;
+  box.innerHTML='<div class="muted">读取中…</div>';
+  try{ const d=await j('/api/aitools');
+    if(d.error){ box.innerHTML='<div class="muted">'+esc(d.error)+'</div>'; return; }
+    toolData=d.items||[];
+  }catch(e){ box.innerHTML='<div class="muted">读不到工具列表</div>'; return; }
+  renderToolList();
+}
+function renderToolList(){
+  const box=document.getElementById('toollist'); if(!box) return;
+  const q=(document.getElementById('toolsearch')?.value||'').trim().toLowerCase();
+  const all=toolData||[];
+  const items=all.filter(t=>!q||t.name.toLowerCase().includes(q)||(t.origin||'').toLowerCase().includes(q));
+  const meta=document.getElementById('toolmeta'); if(meta) meta.textContent='（启用 '+all.filter(t=>t.active).length+' / 共 '+all.length+'）';
+  const groups={};
+  items.forEach(t=>{const k=t.origin||'其他'; (groups[k]=groups[k]||[]).push(t)});
+  box.innerHTML=Object.keys(groups).map(g=>'<div style="margin:8px 0 2px" class="muted">'+esc(g)+'</div>'
+    +groups[g].map(t=>'<div class="row" style="justify-content:space-between;padding:5px 0;border-bottom:1px solid #0e1420;gap:10px">'
+      +'<span style="min-width:0"><span style="font-family:monospace">'+esc(t.name)+'</span> <span class="muted" style="font-size:11px">'+esc(t.desc||'')+'</span></span>'
+      +(t.builtin?'<span class="muted" style="font-size:11px">只读</span>'
+        :'<label class="tgl"><input type="checkbox" '+(t.active?'checked':'')+' onchange="setTool(\''+t.name+'\',this.checked,this)"><span></span></label>')
+      +'</div>').join('')).join('');
+}
+async function setTool(name,on,el){
+  el.disabled=true;
+  try{ const r=await j('/api/aitools/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,enabled:on})});
+    if(r.ok){ toast(on?'已打开 '+name:'已关闭 '+name); }
+    else { toast('失败：'+(r.msg||'AstrBot 不允许')); el.checked=!on; }
+  }catch(e){ toast('失败：'+e.message); el.checked=!on; }
+  el.disabled=false;
+  const t=(toolData||[]).find(x=>x.name===name); if(t) t.active=on;
+  renderToolList();
+}
+
+async function loadMaint(){
+  try{
+    const d=await j('/api/maintenance');
+    const on=document.getElementById('maintOn'); if(on) on.checked=!!d.enabled;
+    const msg=document.getElementById('maintMsg'); if(msg) msg.value=d.message||'';
+    const mo=document.getElementById('maintOpen'); if(mo) mo.value=d.open_message||'';
+    const mc=document.getElementById('maintClose'); if(mc) mc.value=d.close_message||'';
+  }catch(e){}
+}
+async function setMaint(on){
+  try{
+    const r=await j('/api/maintenance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({enabled:!!on})});
+    toast(r.enabled?'维护模式已开':'维护模式已关');
+  }catch(e){ toast('失败：'+e.message); }
+}
+async function setMaintMsg(v){
+  try{ await j('/api/maintenance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:v})}); toast('提示语已保存'); }
+  catch(e){ toast('失败：'+e.message); }
+}
+async function setMaintField(key,v){
+  const body={}; body[key]=v;
+  try{ await j('/api/maintenance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); toast('已保存'); }
+  catch(e){ toast('失败：'+e.message); }
+}
+const _pathTimers={};
+function checkPath(key,inputId,dotId){
+  clearTimeout(_pathTimers[key]);
+  _pathTimers[key]=setTimeout(async function(){
+    const input=document.getElementById(inputId), dot=document.getElementById(dotId);
+    if(!input||!dot) return;
+    const v=input.value.trim();
+    if(!v){ dot.className='pdot bad'; return; }
+    try{
+      const r=await j('/api/paths/check?key='+encodeURIComponent(key)+'&value='+encodeURIComponent(v));
+      dot.className='pdot '+(r.exists?'ok':'bad');
+    }catch(e){ dot.className='pdot bad'; }
+  },300);
+}
+
+function paintDots(s){
+  const dots={tts_root:'dotTts',rvc_root:'dotRvc',rvc_pkg:'dotRvcPkg',model_map:'dotMap',ffmpeg:'dotFfmpeg'};
+  Object.keys(dots).forEach(function(k){
+    const el=document.getElementById(dots[k]); if(!el) return;
+    el.className='pdot '+(s && s[k]?'ok':'bad');
+  });
+}
+
+async function loadPaths(){
+  try{
+    const d=await j('/api/paths'); const c=d.current||{}, s=d.detected||{};
+    pathSet('pathTts', c.tts_root||s.tts_root);
+    pathSet('pathRvc', c.rvc_root||s.rvc_root);
+    pathSet('pathRvcPkg', c.rvc_pkg||s.rvc_pkg);
+    pathSet('pathMap', c.model_map||s.model_map);
+    pathSet('pathFfmpeg', c.ffmpeg||s.ffmpeg);
+    const hint=document.getElementById('pathHint');
+    paintDots(s);
+  }catch(e){}
+}
+function pathSet(id,v){const el=document.getElementById(id); if(el) el.value=v||'';}
+function pathVal(id){const el=document.getElementById(id); return el?el.value.trim():'';}
+async function detectPaths(){
+  try{const d=await j('/api/paths'); const s=d.detected||{};
+    pathSet('pathTts', s.tts_root); pathSet('pathRvc', s.rvc_root);
+    pathSet('pathRvcPkg', s.rvc_pkg); pathSet('pathMap', s.model_map); pathSet('pathFfmpeg', s.ffmpeg);
+    paintDots(s);
+    toast('已填入检测到的路径');}catch(e){toast('检测失败：'+e.message);}
+}
+async function savePaths(){
+  try{
+    const r=await j('/api/paths',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      tts_root:pathVal('pathTts'), rvc_root:pathVal('pathRvc'), rvc_pkg:pathVal('pathRvcPkg'),
+      model_map:pathVal('pathMap'), ffmpeg:pathVal('pathFfmpeg')})});
+    toast(r.msg||'已保存');
+    askRestart('路径改了，要重启 AstrBot 才生效。');
+  }catch(e){toast('保存失败：'+e.message);}
+}
+async function loadPlugins(){
+  const box=document.getElementById('pluglist'); if(!box) return;
+  let s; try{ s=await j('/api/status'); }catch(e){ box.innerHTML='<div class="muted">读不到插件列表</div>'; return; }
+  const rows=[...(s.plugins_detail||[]).map(p=>[p,true]), ...(s.disabled_detail||[]).map(p=>[p,false])];
+  if(!rows.length){ box.innerHTML='<div class="muted">没有插件</div>'; return; }
+  box.innerHTML=rows.map(function(r){
+    const p=r[0], on=r[1];
+    return '<div class="plug'+(on?'':' off')+'">'
+      +'<div class="plughead">'
+        +'<div class="plugmain"><div><b>'+esc(p.display)+'</b>'
+          +' <span class="muted" style="font-size:11px">'+(p.version||'')+'</span>'
+          +(on?'':' <span class="badge off">已停用</span>')+'</div>'
+          +'<div class="muted" style="font-size:12px">'+esc(p.desc||'')+'</div></div>'
+        +'<div class="plugacts">'
+          +'<button onclick="openPluginConf(\''+p.dir+'\',this)">参数</button>'
+          +'<button onclick="togglePlug(\''+p.dir+'\')">'+(on?'停用':'启用')+'</button>'
+          +'<button class="danger" onclick="delPlug(\''+p.dir+'\')">删除</button>'
+        +'</div>'
+      +'</div>'
+      +'<div class="plugbody" id="pb_'+p.dir+'" style="display:none"></div>'
+    +'</div>';
+  }).join('');
+}
+
+async function installPlug(){
+  const el=document.getElementById('newplug'); const url=(el&&el.value||'').trim();
+  if(!url){toast('先贴个地址');return}
+  toast('下载安装中，可能要十几秒…');
+  try{
+    const r=await j('/api/plugin/install',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:url})});
+    toast(r.note||'装好了');
+  }catch(e){toast('安装失败：'+(e.message||'看面板日志'))}
+  loadPlugins();
+  askRestart('插件装好了，要重启 AstrBot 才会加载。');
+}
+
+async function delPlug(n){
+  if(!confirm('确定删除插件 '+n+' ？\n\n会连同它的配置一起删掉，删前会自动打包一份到 logs\\deleted_plugins。'))return;
+  try{
+    const r=await j('/api/plugin/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n})});
+    toast(r.note||'已删除');
+  }catch(e){toast('删除失败')}
+  loadPlugins();
+  askRestart('插件已经删掉了，要重启 AstrBot 才会彻底卸载。');
+}
+
+async function openPluginConf(name, btn){
+  const body=document.getElementById('pb_'+name);
+  if(!body) return;
+  const wasOpen=body.style.display!=='none';
+  // 一次只展开一个，避免表单 id 冲突
+  document.querySelectorAll('.plugbody').forEach(function(el){ el.style.display='none'; });
+  document.querySelectorAll('.plug').forEach(function(el){ el.classList.remove('open'); });
+  if(wasOpen){ return; }
+  body.style.display='block';
+  const card=body.closest('.plug'); if(card) card.classList.add('open');
+
+  const d=await j('/api/plugin_schema?name='+encodeURIComponent(name));
+  const keys=Object.keys(d.schema||{});
+  let form='';
+  if(!keys.length){
+    form='<div class="muted">这个插件没有可调参数，装好就能用。</div>';
+  }else{
+    form=keys.map(function(k){
+      const it=d.schema[k]||{}; const v=d.values[k]; const t=it.type||'string';
+      const label='<div style="margin:12px 0 4px"><b>'+esc(k)+'</b>'
+        +' <span class="muted">'+esc(it.description||'')+'</span></div>';
+      const hint=it.hint?'<div class="muted" style="font-size:11px">'+esc(it.hint)+'</div>':'';
+      let input='';
+      if(t==='bool'){
+        input='<input type="checkbox" id="pc_'+k+'" '+(v?'checked':'')+' style="width:auto">';
+      }else if(t==='int'||t==='float'){
+        input='<input type="number" id="pc_'+k+'" value="'+(v===undefined||v===null?'':v)+'" style="width:160px">';
+      }else if(t==='list'||t==='object'){
+        input='<textarea id="pc_'+k+'" style="min-height:70px">'+esc(JSON.stringify(v,null,2))+'</textarea>';
+      }else if(t==='text'){
+        input='<textarea id="pc_'+k+'" style="min-height:90px">'+esc(v===undefined?'':String(v))+'</textarea>';
+      }else{
+        input='<input type="text" id="pc_'+k+'" value="'+esc(v===undefined?'':String(v))+'" style="width:100%">';
+      }
+      return label+input+hint;
+    }).join('');
+  }
+  body.innerHTML='<div class="muted" style="font-size:11px;margin-bottom:6px">配置文件：'+esc(d.config_path)+'</div>'
+    +form
+    +'<div class="row" style="margin-top:14px"><button class="primary" onclick="savePluginConf(\''+name+'\')">保存</button>'
+    +'<button onclick="openPluginConf(\''+name+'\')">收起</button></div>';
+}
+
+async function savePluginConf(name){
+  const d=await j('/api/plugin_schema?name='+encodeURIComponent(name));
+  const vals={};
+  for(const k of Object.keys(d.schema||{})){
+    const it=d.schema[k]||{}; const t=it.type||'string';
+    const el=document.getElementById('pc_'+k); if(!el) continue;
+    if(t==='bool') vals[k]=el.checked;
+    else if(t==='int') vals[k]=parseInt(el.value||'0',10);
+    else if(t==='float') vals[k]=parseFloat(el.value||'0');
+    else if(t==='list'||t==='object'){
+      try{ vals[k]=JSON.parse(el.value||'null'); }catch(e){ toast(k+' 不是合法 JSON'); return; }
+    }
+    else vals[k]=el.value;
+  }
+  await j('/api/plugin_config',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name:name,values:vals})});
+  toast('已保存');
+  askRestart('插件「'+name+'」的参数已保存，要重启才生效。');
+}
+
+async function togglePlug(n){
+  const r=await j('/api/plugin/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:n})});
+  toast(r.state||r.error);
+  loadPlugins();
+  askRestart('插件「'+n+'」已'+(r.state||'切换')+'，要重启 AstrBot 才会真正生效。');
+}
+
+let contactData=null, contactView='friends', sessStats={}, tokenUsage={}, batchSide='';
+let contactSort=localStorage.getItem('contactSort')||'tokens';
+let contactDir=localStorage.getItem('contactDir')||'desc';
+let listOpen={whitelist:false,blacklist:false};
+let listTab='whitelist';
+function setListTab(side){
+  listTab=side;
+  document.querySelectorAll('#listview button').forEach(function(b){
+    b.classList.toggle('on', b.dataset.v===side);
+  });
+  batchSide='';
+  renderContactLists();
+}
+function toggleList(side){
+  listOpen[side]=!listOpen[side];
+  renderContactLists();
+}
+function setContactSort(k){
+  if(contactSort===k){ contactDir = contactDir==='desc' ? 'asc' : 'desc'; }
+  else { contactSort=k; contactDir='desc'; }
+  localStorage.setItem('contactSort',contactSort);
+  localStorage.setItem('contactDir',contactDir);
+  renderContactLists();
+}
+const CONTACT_LABELS={friends:'好友',groups:'群聊'};
+
+async function loadContacts(){
+  const m=document.getElementById('main');
+  const d=await j('/api/contacts');
+  contactData=d;
+  let newFriends=[];
+  try{ newFriends=(await j('/api/new_friends')).items||[]; }catch(e){}
+  sessStats={};
+  try{ sessStats=(await j('/api/sessions/stats')).items||{}; }catch(e){}
+  tokenUsage={private:{},groups:{},members:{},people:{}};
+  try{ tokenUsage=(await j('/api/token_usage'))||tokenUsage; }catch(e){}
+  const nfHtml = newFriends.length ? ('<div class="card" style="margin-top:12px"><h3>最近新增好友 <span class="muted">有人加了大肥鱼</span></h3>'
+    + newFriends.slice(-10).reverse().map(function(x){
+        return '<div class="rowline"><span class="avatar">'+esc(String(x.name||'?').slice(0,1))+'</span>'
+          +'<div style="flex:1"><div>'+esc(x.name||'')+'</div><div class="muted">'+esc(String(x.user_id))+' · '+esc(x.time||'')+'</div></div></div>';
+      }).join('')
+    + '<div class="row" style="margin-top:8px"><button class="mini" onclick="clearNewFriends()">清空记录</button></div></div>') : '';
+  const tabs=Object.keys(CONTACT_LABELS).map(function(k){
+    return '<button data-v="'+k+'" class="'+(contactView===k?'on':'')+'" onclick="setContactView(\''+k+'\')">'+CONTACT_LABELS[k]+'</button>';
+  }).join('');
+  m.innerHTML=`<div class="row" style="gap:10px;margin-bottom:12px">
+      <div class="stat"><b>${d.friends.length}</b><span class="muted">好友</span></div>
+      <div class="stat"><b>${d.groups.length}</b><span class="muted">群聊</span></div>
+      <div style="flex:1"></div>
+      <input id="ctsearch" placeholder="搜名字或号码…" oninput="renderContactLists()" style="width:220px">
+      <button onclick="loadContacts()">刷新</button>
+    </div>
+    ${nfHtml}
+    <div class="card" style="margin-top:12px"><h3>名单规则</h3>
+      <div class="row" style="justify-content:space-between;padding:4px 0">
+        <span>只理白名单里的人或群</span>
+        <label class="tgl"><input type="checkbox" id="accmode" onchange="setAccessMode(this.checked)"><span></span></label>
+      </div>
+      <div class="muted" style="margin-top:6px;font-size:12px">管理员永远放行，黑名单优先。不在白名单的人和群一律不理，新好友和新拉进的群都默认不进名单，得在下面手动加。</div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="seg" id="listview" style="margin-bottom:10px">
+        <button data-v="whitelist" class="on" onclick="setListTab('whitelist')">白名单</button>
+        <button data-v="blacklist" onclick="setListTab('blacklist')">黑名单</button>
+      </div>
+      <div id="llist"></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <div class="seg" id="cview" style="margin-bottom:10px">${tabs}</div>
+      <div id="clist"></div>
+    </div>`;
+  await loadAccess();
+  loadAccessUI();
+  renderContactLists();
+}
+
+function setContactView(v){
+  contactView=v;
+  groupView=null;
+  friendView=null;
+  document.querySelectorAll('#cview button').forEach(function(b){
+    b.classList.toggle('on', b.dataset.v===v);
+  });
+  renderContactLists();
+}
+
+function nameOf(kind,id){
+  if(kind==='users'){
+    const f=(contactData.friends||[]).find(x=>String(x.id)===String(id));
+    return f?f.name:('QQ '+id);
+  }
+  const g=(contactData.groups||[]).find(x=>String(x.id)===String(id));
+  return g?g.name:('群 '+id);
+}
+
+function accessEntry(kind,id,side){
+  return '<div class="rowline"><span class="avatar">'+(kind==='groups'?'群':'人')+'</span>'
+    +'<div style="flex:1"><div>'+esc(nameOf(kind,id))+'</div><div class="muted">'+esc(String(id))+'</div></div>'
+    +'<button class="mini danger" style="margin-left:0;width:56px" data-kind="'+kind+'" data-id="'+esc(String(id))+'" data-side="'+side+'" onclick="toggleAccess(this)">移出</button></div>';
+}
+
+function groupTokens(gid){
+  return Number((tokenUsage.groups||{})[String(gid)]||0);
+}
+function memberTokens(gid,qq){
+  const m=(tokenUsage.members||{})[String(gid)]||{};
+  return Number(m[String(qq)]||0);
+}
+function personTokens(qq){
+  return Number((tokenUsage.people||{})[String(qq)]||0);
+}
+
+function renderContactLists(){
+  if(!contactData) return;
+  const el=document.getElementById('ctsearch');
+  const q=(el&&el.value||'').trim().toLowerCase();
+  const match=(name,id)=>!q||String(name||'').toLowerCase().includes(q)||String(id).includes(q);
+
+  const side=listTab;
+  const lbox=document.getElementById('llist');
+  if(lbox){
+    const data=(accessData&&accessData[side])||{users:[],groups:[]};
+    const items=[].concat((data.users||[]).map(id=>['users',id]),(data.groups||[]).map(id=>['groups',id]))
+      .filter(p=>match(nameOf(p[0],p[1]),p[1]));
+    const total=(data.users||[]).length+(data.groups||[]).length;
+    const open=listOpen[side];
+    const shown=open?items:items.slice(0,5);
+    const more=items.length>5;
+    lbox.innerHTML='<div class="row" style="justify-content:space-between;margin-bottom:6px">'
+      +'<span class="muted">共 '+total+' 个</span><span class="row" style="gap:6px">'
+      +(more?'<button class="mini" style="margin-left:0" onclick="toggleList(\''+side+'\')">'+(open?'收起':'展开')+'</button>':'')
+      +'<button class="mini" style="margin-left:0" onclick="batchAdd(\''+side+'\')">＋ 批量添加</button></span></div>'
+      +(batchSide===side?batchPicker(side):'')
+      +'<div class="nlist'+(open?' open':'')+'">'
+      +(shown.map(p=>accessEntry(p[0],p[1],side)).join('')
+        || '<div class="muted" style="padding:4px 2px">还没有人</div>')
+      +'</div>';
+  }
+  document.querySelectorAll('#listview button').forEach(function(b){
+    const d=(accessData&&accessData[b.dataset.v])||{users:[],groups:[]};
+    const n=(d.users||[]).length+(d.groups||[]).length;
+    b.textContent=(b.dataset.v==='whitelist'?'白名单':'黑名单')+' · '+n;
+  });
+
+  const box=document.getElementById('clist');
+  if(!box) return;
+  if(contactView==='groups' && groupView){ renderGroupDetail(groupView); return; }
+  if(contactView==='friends' && friendView){ renderFriendDetail(friendView); return; }
+  if(contactView!=='friends'&&contactView!=='groups') return;
+
+  const isFriend=contactView==='friends';
+  const sortKey=contactSort==='chars'?'chars':'tokens';
+  const statOf=function(x){
+    return sessStats['snowluma:'+(isFriend?'FriendMessage':'GroupMessage')+':'+x.id]||null;
+  };
+  const tokenOf=function(x){
+    return isFriend?personTokens(x.id):groupTokens(x.id);
+  };
+  const rows=(isFriend?contactData.friends:contactData.groups).filter(x=>match(x.name,x.id)).slice().sort(function(a,b){
+    const va=sortKey==='tokens'?tokenOf(a):Number((statOf(a)||{}).chars||0);
+    const vb=sortKey==='tokens'?tokenOf(b):Number((statOf(b)||{}).chars||0);
+    if(va!==vb) return contactDir==='asc' ? va-vb : vb-va;
+    return String(a.name||'').localeCompare(String(b.name||''),'zh-CN');
+  });
+  const mark=function(k){return contactSort===k ? (contactDir==='asc'?' ▲':' ▼') : '';};
+  const kind=isFriend?'users':'groups';
+  const sideOf=function(id){
+    if(!accessData) return '<span class="muted">—</span>';
+    const has=function(side){
+      const d=accessData[side]||{};
+      return (d[kind]||[]).map(String).includes(String(id));
+    };
+    if(has('blacklist')) return '<span style="color:var(--bad)">黑名单</span>';
+    if(has('whitelist')) return '<span style="color:var(--ok)">白名单</span>';
+    return '<span class="muted">—</span>';
+  };
+  const body=rows.map(function(x){
+    const st=statOf(x);
+    const token=tokenOf(x);
+    const act=(isFriend?"openFriend('":"openGroup('")+esc(String(x.id))+"')";
+    return '<tr><td style="cursor:pointer" onclick="'+act+'">'+
+      '<div class="row" style="gap:8px;align-items:center">'
+      +'<span class="avatar">'+(isFriend?esc(String(x.name||'?').slice(0,1)):'群')+'</span>'
+      +'<div><div>'+esc(x.name||'')+' <span class="muted">›</span></div><div class="muted" style="font-size:12px">'+esc(String(x.id))+(isFriend?'':' · '+fmt(x.members)+' 人')+'</div></div>'
+      +'</div></td>'
+      +'<td>'+fmt(token)+'</td>'
+      +'<td>'+(st?(fmt(st.chars)+' 字'):'—')+'</td>'
+      +'<td>'+sideOf(x.id)+'</td>'
+      +'<td style="text-align:right"><button class="mini danger" style="width:80px;height:26px;padding:0;margin-left:0" '
+      +(st?('data-cid="'+esc(String(st.id))+'" onclick="clearSess(this.dataset.cid)"'):'disabled')
+      +'>清上下文</button></td></tr>';
+  }).join('');
+  const head='<tr><th>名字</th>'
+    +'<th class="thsort'+(contactSort==='tokens'?' cur':'')+'" style="width:110px" onclick="setContactSort(\'tokens\')">累计 token'+mark('tokens')+'</th>'
+    +'<th class="thsort'+(contactSort==='chars'?' cur':'')+'" style="width:130px" onclick="setContactSort(\'chars\')">上下文'+mark('chars')+'</th>'
+    +'<th style="width:96px">名单</th>'
+    +'<th style="width:120px;text-align:right">操作</th></tr>';
+  box.innerHTML='<table>'+head+(body||'<tr><td colspan="5" class="muted">没有匹配的</td></tr>')+'</table>';
+}
+
+async function clearNewFriends(){
+  try{ await j('/api/new_friends/clear',{method:'POST'}); toast('已清空'); loadContacts(); }
+  catch(e){ toast('失败：'+e.message); }
+}
+
+let groupView=null, friendView=null, allProfiles=[];
+
+async function openGroup(gid){
+  groupView=String(gid);
+  const box=document.getElementById('clist');
+  if(box) box.innerHTML='<div class="muted">读取档案…</div>';
+  try{ allProfiles=(await j('/api/profiles')).items||[]; }catch(e){ allProfiles=[]; }
+  renderGroupDetail(groupView);
+}
+
+function closeGroup(){ groupView=null; renderContactLists(); }
+
+async function openFriend(qq){
+  friendView=String(qq);
+  const box=document.getElementById('clist');
+  if(box) box.innerHTML='<div class="muted">读取档案…</div>';
+  try{ allProfiles=(await j('/api/profiles')).items||[]; }catch(e){ allProfiles=[]; }
+  renderFriendDetail(friendView);
+}
+
+function closeFriend(){ friendView=null; renderContactLists(); }
+
+function renderFriendDetail(qq){
+  const box=document.getElementById('clist');
+  if(!box) return;
+  const f=(contactData.friends||[]).find(function(x){return String(x.id)===String(qq)})||{name:'QQ '+qq};
+  const p=allProfiles.find(function(x){return x.qq===String(qq)});
+  const gid=(p&&p.groups&&p.groups[0])||'';
+  const btn='<button class="mini" style="margin-left:0" onclick="summarizeProfile(\''+esc(gid)+'\',\''+esc(String(qq))+'\')">整理记忆</button>';
+  const head='<div class="row" style="justify-content:space-between;margin-bottom:10px">'
+    +'<div class="row" style="gap:10px"><button class="mini" style="margin-left:0" onclick="closeFriend()">← 返回</button>'
+    +'<b>'+esc(f.name||'')+'</b><span class="muted">'+esc(String(qq))+'</span>'+btn+'</div></div>';
+  box.innerHTML=head+(p?personCardHtml(p,{totalTokens:personTokens(qq)}):'<div class="muted">还没聊过，没有档案。</div>');
+}
+
+async function summarizeProfile(gid,qq){
+  try{
+    await j('/api/profiles/summarize',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({gid:gid||'',qq:qq||''})});
+    toast('已提交，整理完会自动刷新');
+    [15000,40000,80000,120000].forEach(function(ms){ setTimeout(refreshProfilesView, ms); });
+  }catch(e){ toast('提交失败：'+e.message); }
+}
+
+async function refreshProfilesView(){
+  try{ allProfiles=(await j('/api/profiles')).items||[]; }catch(e){ return; }
+  if(contactView==='friends' && friendView){ renderFriendDetail(friendView); return; }
+  if(contactView==='groups' && groupView){
+    const sel=document.getElementById('grpSel');
+    const keep=sel?sel.value:'';
+    renderGroupDetail(groupView);
+    const s=document.getElementById('grpSel');
+    if(keep && s){ s.value=keep; loadGroupPerson(); }
+  }
+}
+
+let groupPeople=[];
+function renderGroupDetail(gid){
+  const box=document.getElementById('clist');
+  if(!box) return;
+  const g=(contactData.groups||[]).find(function(x){return String(x.id)===String(gid)})||{name:'群 '+gid,members:0};
+  const st=sessStats['snowluma:GroupMessage:'+gid];
+  const gToken=groupTokens(gid);
+  const inGroupList=function(side){
+    const d=(accessData&&accessData[side])||{};
+    return (d.groups||[]).map(String).includes(String(gid));
+  };
+  const groupTag=inGroupList('blacklist')?'<span style="color:var(--bad)">本群在黑名单</span>':(inGroupList('whitelist')?'<span style="color:var(--ok)">本群在白名单</span>':'<span class="muted">本群未加入名单</span>');
+  groupPeople=allProfiles.filter(function(p){return (p.groups||[]).map(String).includes(String(gid))})
+    .sort(function(a,b){return memberTokens(gid,b.qq)-memberTokens(gid,a.qq)||(b.msg_count||0)-(a.msg_count||0)});
+  const head='<div class="row" style="justify-content:space-between;margin-bottom:10px">'
+    +'<div class="row" style="gap:10px"><button class="mini" style="margin-left:0" onclick="closeGroup()">← 返回</button>'
+    +'<b>'+esc(g.name||'')+'</b><span class="muted">'+esc(String(gid))+' · '+fmt(g.members)+' 人 · 本群累计 ≈'+fmt(gToken)+' token</span> '+groupTag
+    +'<button class="mini" style="margin-left:0" onclick="summarizeProfile(\''+esc(String(gid))+'\',\'\')">整理记忆</button></div>'
+    +'</div>';
+  const options=groupPeople.map(function(p){
+    return '<option value="'+esc(p.qq)+'">'+esc(p.alias||p.name)+'（'+esc(p.qq)+'） · 本群 ≈'+fmt(memberTokens(gid,p.qq))+' token</option>';
+  }).join('');
+  const picker=groupPeople.length
+    ? '<div class="row" style="gap:10px;margin-bottom:10px"><span class="muted" style="flex:none">选择群友</span><select id="grpSel" style="flex:1;min-width:260px" onchange="loadGroupPerson()">'+options+'</select></div><div id="grpCard"></div>'
+    : '<div class="muted">这个群还没有聊过天的人。</div>';
+  box.innerHTML=head+picker;
+  if(groupPeople.length) loadGroupPerson();
+}
+
+function loadGroupPerson(){
+  const sel=document.getElementById('grpSel');
+  const box=document.getElementById('grpCard');
+  if(!sel||!box) return;
+  const p=groupPeople.find(function(x){return x.qq===sel.value});
+  box.innerHTML=p?personCardHtml(p,{groupTokens:memberTokens(groupView,p.qq),totalTokens:personTokens(p.qq)}):'';
+}
+
+function personCardHtml(p, meta){
+  meta=meta||{};
+  const likes=esc(p.likes||'').trim();
+  const notes=esc(p.notes||'').trim();
+  const tokenLine=meta.groupTokens!=null
+    ? '本群 ≈'+fmt(meta.groupTokens)+' token · 总计 ≈'+fmt(meta.totalTokens||0)+' token'
+    : '总计 ≈'+fmt(meta.totalTokens||0)+' token';
+  return '<div class="pcard">'
+    +'<div class="row" style="justify-content:space-between;gap:8px">'
+    +'<div class="row" style="gap:8px"><span class="avatar">'+esc(String(p.alias||p.name||'?').slice(0,1))+'</span>'
+    +'<div><b>'+esc(p.alias||p.name)+'</b> <span class="muted">'+esc(p.qq)+'</span>'
+    +'<div class="muted" style="font-size:12px">'+esc(p.relation)+' · '+p.msg_count+' 条 · '+fmt(p.chars)+' 字 · '+tokenLine+' · 最后 '+esc(p.last_seen||'—')+'</div></div></div>'
+    +'</div>'
+    +'<div class="muted" style="margin:10px 0 2px">喜好</div>'
+    +'<div>'+(likes||'<span class="muted">还没记</span>')+'</div>'
+    +'<div class="muted" style="margin:10px 0 2px">印象</div>'
+    +'<div>'+(notes||'<span class="muted">还没记</span>')+'</div>'
+    +'</div>';
+}
+
+let accessData=null;
+
+async function loadAccess(){
+  try{ accessData=await j('/api/access'); }catch(e){}
+  return accessData;
+}
+
+function batchPicker(side){
+  if(!contactData) return '';
+  const has=function(s,kind,id){
+    const d=(accessData&&accessData[s])||{};
+    return (d[kind]||[]).map(String).includes(String(id));
+  };
+  const line=function(kind,id,name){
+    const white=has('whitelist',kind,id), black=has('blacklist',kind,id);
+    const inTarget=(side==='whitelist'?white:black), inOther=(side==='whitelist'?black:white);
+    const tag=white?'<span style="color:var(--ok)">白名单</span>':(black?'<span style="color:var(--bad)">黑名单</span>':'<span class="muted">未加入</span>');
+    const note=inTarget?' · 已在本名单':(inOther?' · 加入后会从'+(side==='whitelist'?'黑名单':'白名单')+'移出':'');
+    return '<label style="display:block;padding:3px 2px'+(inTarget?' opacity:.55':'')+'"><input type="checkbox" class="bchk" data-kind="'+kind+'" value="'+esc(String(id))+'" style="width:auto" '+(inTarget?'disabled':'')+'> '
+      +esc(name||'')+' · '+esc(String(id))+' · '+tag+note+'</label>';
+  };
+  const friends=(contactData.friends||[]).map(f=>line('users',f.id,f.name)).join('') || '<div class="muted">没有好友</div>';
+  const groups=(contactData.groups||[]).map(g=>line('groups',g.id,g.name)).join('') || '<div class="muted">没有群聊</div>';
+  return '<div style="border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px"><div style="margin-bottom:4px">加入'+(side==='whitelist'?'白名单':'黑名单')+'</div>'
+    +'<div class="muted" style="margin:6px 0 2px">好友</div>'+friends
+    +'<div class="muted" style="margin:8px 0 2px">群聊</div>'+groups
+    +'<div class="row" style="margin-top:8px"><button class="primary" onclick="confirmBatch(\''+side+'\')">加入</button>'
+    +'<button onclick="batchAdd(\''+side+'\')">取消</button></div></div>';
+}
+
+function batchAdd(side){
+  batchSide = batchSide===side ? '' : side;
+  renderContactLists();
+}
+
+async function confirmBatch(side){
+  const byKind={users:[],groups:[]};
+  Array.from(document.querySelectorAll('.bchk:checked')).forEach(function(x){
+    const k=x.dataset.kind==='groups'?'groups':'users';
+    byKind[k].push(x.value);
+  });
+  const total=byKind.users.length+byKind.groups.length;
+  if(!total){ toast('先勾几个人'); return; }
+  try{
+    let added=0;
+    for(const kind of ['users','groups']){
+      if(!byKind[kind].length) continue;
+      const r=await j('/api/access/batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({side:side,kind:kind,ids:byKind[kind]})});
+      added += (r.added||0);
+    }
+    toast('已加入 '+added+' 个');
+    batchSide='';
+    await loadAccess(); renderContactLists();
+  }catch(e){ toast('失败：'+e.message); }
+}
+
+async function toggleAccess(btn){
+  const kind=btn.dataset.kind, id=String(btn.dataset.id), side=btn.dataset.side;
+  const on=!((accessData[side]&&accessData[side][kind])||[]).map(String).includes(id);
+  try{
+    await j('/api/access/toggle',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({side:side,kind:kind,id:id,on:on})});
+    await loadAccess(); renderContactLists();
+    toast(on?(side==='whitelist'?'已加白名单':'已拉黑'):'已移出名单');
+  }catch(e){ toast('失败：'+e.message); }
+}
+
+async function loadAccessUI(){
+  const d=await loadAccess();
+  const m=document.getElementById('accmode');
+  if(m) m.checked=d.mode==='whitelist';
+}
+
+async function setAccessMode(on){
+  try{ await j('/api/access/mode',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({mode:on?'whitelist':'all'})});
+    toast(on?'只理白名单了':'恢复理所有人了'); loadAccessUI();
+  }catch(e){ toast('失败：'+e.message); }
+}
+
+async function loadPersonaHistory(){
+  const box=document.getElementById('phist'); if(!box) return;
+  box.innerHTML='<div class="muted">读取历史…</div>';
+  try{
+    const d=await j('/api/persona/history');
+    const items=(d.items||[]).slice(0,15);
+    if(!items.length){ box.innerHTML='<div class="muted">还没有历史版本，改一次保存就有了。</div>'; return; }
+    box.innerHTML=items.map(function(x){
+      const t=new Date((x.ts||0)*1000).toLocaleString();
+      return '<div class="row" style="justify-content:space-between;padding:6px 0;border-bottom:1px solid #0e1420">'
+        +'<div><div>'+esc(t)+'</div><div class="muted">'+esc(x.preview||'')+' · '+x.chars+' 字</div></div>'
+        +'<button class="mini" data-idx="'+x.idx+'" onclick="restorePersona(this)">恢复这一版</button></div>';
+    }).join('');
+  }catch(e){ box.innerHTML='<div class="muted">读取失败：'+esc(e.message)+'</div>'; }
+}
+
+async function restorePersona(btn){
+  if(!confirm('恢复这一版？当前这版会先存进历史，不会丢。')) return;
+  try{
+    const r=await j('/api/persona/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idx:parseInt(btn.dataset.idx,10)})});
+    toast(r.msg||'已恢复'); loadPersona(); loadPersonaHistory();
+  }catch(e){ toast('失败：'+e.message); }
+}
+
+async function loadPersona(){const p=await j('/api/persona');document.getElementById('ptext').value=p.prompt;document.getElementById('pmeta').textContent=`（${p.id}，${p.prompt.length} 字）`}
+
+let nOrder='new';
+async function toggleNOrder(){
+  nOrder = nOrder==='new' ? 'old' : 'new';
+  const b=document.getElementById('norderbtn');
+  if(b) b.textContent = nOrder==='new' ? '排序：最新在上' : '排序：最早在上';
+  await loadNetease();
+}
+
+async function loadNetease(){
+  try{
+    const d=await j('/api/netease');
+    const st=d.status||{};
+    document.getElementById('nstatus').innerHTML = st.ok
+      ? '<i class="dot on"></i> '+esc(st.nickname||'')+'（'+esc(st.uid)+'）'+(st.vip?' · 会员':'')
+      : '<i class="dot off"></i> 未登录'+(st.error?'：'+esc(st.error):'');
+    const sel=document.getElementById('npl');
+    sel.innerHTML=(d.playlists||[]).map(function(p){
+      const on=(d.target&&d.target.id===p.id)?' selected':'';
+      return '<option value="'+p.id+'"'+on+'>'+esc(p.name)+'（'+(p.count||0)+'）</option>';
+    }).join('') || '<option value="">（没有歌单）</option>';
+    document.getElementById('ntarget').textContent = (d.target&&d.target.name) ? '当前：'+d.target.name : '还没选收藏歌单';
+    const c=await j('/api/netease/collected?limit=50');
+    const items=(c.items||[]).map(function(it,i){ return {it:it, i:i}; }).sort(function(a,b){
+      if(a.it.time===b.it.time) return a.i-b.i;
+      if(nOrder==='new') return a.it.time < b.it.time ? 1 : -1;
+      return a.it.time < b.it.time ? -1 : 1;
+    }).map(function(x){ return x.it; });
+    document.getElementById('ncount').textContent = items.length ? ('（'+items.length+' 条）') : '';
+    if(!items.length){
+      document.getElementById('nbox').innerHTML='<div class="muted" style="padding:10px">还没有收藏记录。让大肥鱼推荐一首试试，它会自动标风格和介绍。</div>';
+      return;
+    }
+    let html='', lastTime='';
+    items.forEach(function(it){
+      if(it.time !== lastTime){
+        lastTime = it.time;
+        html += '<div class="timehead" style="margin:14px 0 4px">'+esc(it.time||'')+'</div>';
+      }
+      const tags=String(it.style||'').split(/[\/,， ]+/).filter(Boolean).map(function(t){return '<span class="tag">'+esc(t)+'</span>'}).join('');
+      const badge=it.added?'<span class="tag" style="color:#5aa469;border-color:#2c5a3f">已进歌单</span>':'';
+      html += '<div style="padding:8px 6px;border-bottom:1px solid #0e1420">'
+        +'<div style="font-size:14px"><b>'+esc(it.name||'')+'</b> <span class="muted">'+esc(it.artists||'')+'</span></div>'
+        +(it.intro?'<div class="muted" style="margin-top:4px">'+esc(it.intro)+'</div>':'')
+        +'<div style="margin-top:5px">'+tags+badge+'</div></div>';
+    });
+    document.getElementById('nbox').innerHTML=html;
+  }catch(e){ document.getElementById('nstatus').innerHTML='<i class="dot off"></i> 读取失败：'+esc(e.message); }
+}
+
+function toggleCookieBox(){
+  const b=document.getElementById('ncookiebox');
+  b.style.display = (b.style.display==='none'||!b.style.display) ? 'block' : 'none';
+}
+
+async function saveNetCookie(){
+  const el=document.getElementById('ncookie');
+  const c=(el&&el.value||'').trim();
+  if(!c){ toast('先粘 cookie'); return; }
+  try{
+    const r=await j('/api/netease/cookie',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cookie:c})});
+    toast(r.ok?('已登录：'+(r.nickname||'')):('登录失败：'+(r.error||'')));
+    el.value='';
+    loadNetease();
+  }catch(e){ toast('保存失败：'+e.message); }
+}
+
+async function saveNetTarget(){
+  const sel=document.getElementById('npl');
+  if(!sel||!sel.value){ toast('先选歌单'); return; }
+  const name=sel.options[sel.selectedIndex].text.replace(/（\d+）$/,'');
+  try{
+    await j('/api/netease/target',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:parseInt(sel.value,10),name:name})});
+    toast('收藏歌单已设置');
+    loadNetease();
+  }catch(e){ toast('设置失败：'+e.message); }
+}
+
+let qrTimer=null;
+async function startQrLogin(){
+  try{
+    const d=await j('/api/netease/qr');
+    if(!d.ok){ toast('获取二维码失败：'+(d.error||'')); return; }
+    const img=document.getElementById('nqr');
+    const st=document.getElementById('nqrstate');
+    img.style.display='block';
+    img.src='/api/netease/qr.png?t='+Date.now();
+    st.textContent='用网易云 App 扫码';
+    if(qrTimer) clearInterval(qrTimer);
+    qrTimer=setInterval(async function(){
+      try{
+        const r=await j('/api/netease/qr/status');
+        if(r.msg) st.textContent=r.msg;
+        if(r.code===803){
+          clearInterval(qrTimer); qrTimer=null;
+          if(r.msg==='登录成功'){ img.style.display='none'; loadNetease(); }
+        } else if(r.code===800){
+          clearInterval(qrTimer); qrTimer=null;
+        }
+      }catch(e){}
+    }, 2000);
+  }catch(e){ toast('失败：'+e.message); }
+}
+
+async function savePersona(){const prompt=document.getElementById('ptext').value;const r=await j('/api/persona',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});toast(r.msg)}
+
+const MOOD_CN={happy:'开心',sad:'难过',angry:'生气',shy:'害羞',confused:'疑惑',hungry:'饿'};
+async function loadStickers(){const d=await j('/api/stickers');const total=Object.values(d).reduce((a,b)=>a+b.length,0);document.getElementById('smeta').textContent=`（共 ${total} 张）`;
+  document.getElementById('sbox').innerHTML=Object.entries(d).map(([mood,files])=>`<div class="mooddrop" data-mood="${esc(mood)}" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="dropStickers(event,this)"><div class="row" style="justify-content:space-between;margin-bottom:6px"><span>${esc(MOOD_CN[mood]||mood)} <span class="muted" style="font-size:11px">${files.length} 张</span></span><span class="row" style="gap:6px"><button class="mini" onclick="event.stopPropagation();pickStickers('${esc(mood)}')">导入</button><button class="mini" onclick="event.stopPropagation();toggleMood(this)">展开</button></span></div><div class="thumbs">${files.map(f=>`<img draggable="false" loading="lazy" src="/api/sticker/${encodeURIComponent(mood)}/${encodeURIComponent(f)}">`).join('')}</div></div>`).join('')}
+function toggleMood(btn){const box=btn.closest('.mooddrop');box.classList.toggle('open');btn.textContent=box.classList.contains('open')?'收起':'展开';}
+
+async function uploadStickers(mood, files){
+  let ok=0;
+  for(const f of files){
+    if(!f.type || !f.type.startsWith('image/')) continue;
+    const fd=new FormData(); fd.append('mood',mood); fd.append('file',f);
+    try{ const r=await fetch('/api/stickers/upload',{method:'POST',body:fd}); if(r.ok) ok++; }catch(e){}
+  }
+  toast('已导入 '+ok+' 张到 '+mood);
+  loadStickers();
+}
+function pickStickers(mood){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.multiple=true;
+  inp.onchange=function(){ uploadStickers(mood, Array.from(inp.files||[])); };
+  inp.click();
+}
+function dropStickers(ev, el){
+  ev.preventDefault(); ev.stopPropagation(); el.classList.remove('over');
+  const mood=el.dataset.mood;
+  const files=Array.from(ev.dataTransfer.files||[]);
+  uploadStickers(mood, files);
+}
+
+async function loadLog(name){curLog=name;const r=await j(`/api/logs?name=${name}&lines=200`);const b=document.getElementById('lbox');if(b){b.textContent=r.content;b.scrollTop=b.scrollHeight}}
+async function markLogSeen(){
+  try{const s=await j('/api/logs/seen',{method:'POST'});const tip=document.getElementById('errTip');if(tip){tip.textContent=s.cleared?('刚把 '+s.cleared+' 条错误标成已读，红点只提醒之后的新错误。'):'最近没有新的日志错误。';}updateBadges();}catch(e){}
+}
+function toggleFollow(){follow=!follow;document.getElementById('fbtn').textContent='自动刷新：'+(follow?'开':'关')}
+
+async function act(name){try{const r=await j('/api/action',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})});toast(r.msg||'已执行')}catch(e){toast('操作失败')}}
+
+function sizeText(n){if(!n)return '—';if(n>=1073741824)return (n/1073741824).toFixed(1)+' GB';if(n>=1048576)return Math.round(n/1048576)+' MB';return Math.max(1,Math.round(n/1024))+' KB'}
+
+async function loadBackup(){
+  if(!document.getElementById('bakTime')) return;
+  try{
+    const d=await j('/api/backup/status');
+    let when='还没有';
+    if(d.latest){
+      const t=new Date(d.latest.mtime*1000);
+      const p=n=>String(n).padStart(2,'0');
+      when=`${p(t.getMonth()+1)}-${p(t.getDate())} ${p(t.getHours())}:${p(t.getMinutes())}`;
+    }
+    document.getElementById('bakTime').textContent=when;
+    document.getElementById('bakSize').textContent=d.latest?sizeText(d.latest.size):'—';
+    document.getElementById('bakCount').textContent=(d.count||0)+' 份';
+    const btn=document.getElementById('bakBtn'), msg=document.getElementById('bakMsg');
+    window.__bakRunning=!!d.running;
+    if(d.running){
+      btn.disabled=true; btn.textContent='备份中…'; msg.textContent='正在打包，约一分钟';
+    }else{
+      btn.disabled=false; btn.textContent='立即备份';
+      msg.textContent = d.ok===false ? ('上次失败：'+(d.error||'未知错误')) : '';
+    }
+  }catch(e){}
+}
+
+async function backupNow(){
+  try{
+    const r=await j('/api/backup',{method:'POST'});
+    toast(r.msg||'备份已开始');
+    if(window.__bakTimer) clearInterval(window.__bakTimer);
+    window.__bakTimer=setInterval(async()=>{
+      if(!document.getElementById('bakBtn')){
+        clearInterval(window.__bakTimer); window.__bakTimer=null; return;
+      }
+      const was=window.__bakRunning;
+      await loadBackup();
+      if(!window.__bakRunning){
+        clearInterval(window.__bakTimer); window.__bakTimer=null;
+        if(was) toast('备份完成，点「查看备份」');
+      }
+    },2000);
+    await loadBackup();
+  }catch(e){toast('备份启动失败：'+e.message)}
+}
+
+setInterval(refresh,3000);
+setInterval(()=>{if(curTab==='消息流'){const doc=document.documentElement;const near=window.innerHeight+window.scrollY>=doc.scrollHeight-240;if(near) loadMsgs();}else if(curTab==='日志'&&follow)loadLog(curLog)},4000);
+refresh();render();
+</script>
+</body>
+</html>
+
+
+

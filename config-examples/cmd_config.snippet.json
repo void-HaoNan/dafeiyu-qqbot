@@ -1,0 +1,60 @@
+{
+  "_说明": "这是要合并进 cmd_config.json 的关键片段，不是整份配置。字段路径以 AstrBot 4.29.1 为准。",
+  "wake_prefix": [""],
+  "admins_id": ["你的管理员QQ"],
+  "provider": [
+    {
+      "id": "deepseek",
+      "enable": true,
+      "model": "deepseek-chat",
+      "provider_source_id": "deepseek_source",
+      "modalities": []
+    },
+    {
+      "id": "glm4v",
+      "enable": true,
+      "model": "glm-4v-flash",
+      "provider_source_id": "zhipu_source",
+      "modalities": ["text", "image"]
+    }
+  ],
+  "provider_sources": [
+    {
+      "id": "deepseek_source",
+      "provider": "deepseek",
+      "type": "openai_chat_completion",
+      "provider_type": "chat_completion",
+      "key": ["sk-你的DeepSeekKey"],
+      "api_base": "https://api.deepseek.com/v1",
+      "timeout": 120
+    },
+    {
+      "id": "zhipu_source",
+      "provider": "zhipu",
+      "type": "openai_chat_completion",
+      "provider_type": "chat_completion",
+      "key": ["你的智谱Key"],
+      "api_base": "https://open.bigmodel.cn/api/paas/v4/",
+      "timeout": 120
+    }
+  ],
+  "provider_settings": {
+    "web_search": true,
+    "websearch_provider": "deepseek"
+  },
+  "agent_runner": {
+    "config": {
+      "model": {
+        "provider_id": "deepseek"
+      },
+      "misc": {
+        "max_steps": 8,
+        "tool_call_timeout": 120
+      }
+    }
+  },
+  "provider_ltm_settings": {
+    "group_icl_enable": true,
+    "group_message_max_cnt": 200
+  }
+}

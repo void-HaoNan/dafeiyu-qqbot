@@ -1,0 +1,24 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: windows-latest
+    env:
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: syntax
+        run: python -m compileall -q engines scripts tests panel
+      - name: smoke
+        run: python tests/smoke.py
+      - name: docs
+        run: python -c "from pathlib import Path; missing=[p for p in ['README.md','INSTALL.md','ARCHITECTURE.md','docs/CONFIG.md'] if not Path(p).exists()]; raise SystemExit(1 if missing else 0)"

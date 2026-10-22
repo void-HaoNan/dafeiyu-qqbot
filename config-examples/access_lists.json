@@ -1,0 +1,13 @@
+{
+    "mode": "whitelist",
+    "allow_all_groups": false,
+    "auto_whitelist_new_friend": false,
+    "whitelist": {
+        "users": [],
+        "groups": []
+    },
+    "blacklist": {
+        "users": [],
+        "groups": []
+    }
+}

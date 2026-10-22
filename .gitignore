@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 运行时数据
+data/
+logs/
+backups/
+tmp/
+downloads/
+disabled_plugins/
+secrets/
+panel/sing_test/
+panel/model_state.json
+panel/rvc_state.json
+panel/log_seen.json
+*.log
+*.db
+*.db-wal
+*.db-shm
+*.jsonl
+
+# 大文件和模型
+rvc/
+stickers/
+datasets/
+bin/
+*.zip
+*.7z
+*.pth
+*.ckpt
+*.index
+*.wav
+*.mp3
+
+# 配置里的密钥
+cmd_config.json
+*_config.json
+!config-examples/*.json
+.env
+
+# 本地工具和模型，不进仓库
+tools/
+models/
