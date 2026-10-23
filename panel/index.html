@@ -383,9 +383,10 @@ function renderOverview(s){const p=s.ports;const chip=(ok,l,key)=>`<div class="k
     <div class="card"><h3>连接</h3>${chip(qqUp,'QQ 登录','qq')}${chip(p.reverse_ws,'反向 WS 6199','reverse_ws')}${chip(p.onebot_http,'OneBot 3000','onebot_http')}${chip(p.snowluma,'SnowLuma 5099','snowluma')}${chip(p.astrbot,'AstrBot 6185','astrbot')}${chip(p.panel,'面板 6868','panel')}</div>
     <div class="card"><h3>插件</h3><div class="plugin-list">${pluginRows}</div></div>
     <div class="card"><h3>上下文</h3>
-      <div class="kv"><span>私聊</span><b id="ctxPrivate">—</b></div>
-      <div class="kv"><span>群聊</span><b id="ctxGroup">—</b></div>
-      <div class="muted" style="font-size:11px;margin-top:8px">当前对话内容，不是累计记录</div>
+      <div class="tokrow" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+        <div class="tokstat"><span>私聊</span><b id="ctxPrivate">—</b></div>
+        <div class="tokstat"><span>群聊</span><b id="ctxGroup">—</b></div>
+      </div>
     </div>
   </div>
   <div class="card" style="margin-top:14px"><h3>Token 消耗 <span class="muted">每 10 秒刷新</span></h3>
@@ -1631,7 +1632,7 @@ function renderContactLists(){
       +'<div><div>'+esc(x.name||'')+' <span class="muted">›</span></div><div class="muted" style="font-size:12px">'+esc(String(x.id))+(isFriend?'':' · '+fmt(x.members)+' 人')+'</div></div>'
       +'</div></td>'
       +'<td>'+fmt(token)+'</td>'
-      +'<td>'+(st?(fmt(st.chars)+' 字'):'—')+'</td>'
+      +'<td>'+fmt(st?st.chars:0)+' 字</td>'
       +'<td>'+sideOf(x.id)+'</td>'
       +'<td style="text-align:right"><button class="mini danger" style="width:80px;height:26px;padding:0;margin-left:0" '
       +(st?('data-cid="'+esc(String(st.id))+'" onclick="clearSess(this.dataset.cid)"'):'disabled')
