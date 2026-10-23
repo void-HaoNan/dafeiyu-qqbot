@@ -33,7 +33,7 @@
   .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
   .overview-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));align-items:stretch}
   .overview-grid .card{height:100%;min-height:220px}
-  .plugin-list{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+  .plugin-list{display:grid;grid-template-columns:1fr;gap:0 18px}
   .tokrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:12px}
   .tokstat{background:#131a26;border:1px solid var(--line);border-radius:10px;padding:14px;text-align:center;min-height:96px;display:flex;flex-direction:column;justify-content:center}
   .tokstat span{color:var(--sub);font-size:12px}
@@ -568,6 +568,27 @@ async function renderManage(){
       <button onclick="window.open('/backups','_blank')">查看备份</button>
       <span class="muted" id="bakMsg"></span>
     </div>
+    <details style="margin-top:10px" open>
+      <summary class="muted">备份内容设置</summary>
+      <div class="grid" style="gap:4px 18px;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));margin-top:8px">
+        <label class="row" style="gap:8px"><input type="checkbox" id="bkAstrbot" style="width:auto"> AstrBot 数据</label>
+        <label class="row" style="gap:8px"><input type="checkbox" id="bkData" style="width:auto"> 大肥鱼数据</label>
+        <label class="row" style="gap:8px"><input type="checkbox" id="bkSnow" style="width:auto"> SnowLuma 配置</label>
+        <label class="row" style="gap:8px"><input type="checkbox" id="bkSecrets" style="width:auto"> 密钥</label>
+        <label class="row" style="gap:8px"><input type="checkbox" id="bkPersonas" style="width:auto"> 人设</label>
+        <label class="row" style="gap:8px"><input type="checkbox" id="bkPanelCode" style="width:auto"> 控制台代码</label>
+        <label class="row" style="gap:8px"><input type="checkbox" id="bkPanelState" style="width:auto"> 控制台状态</label>
+        <label class="row" style="gap:8px"><input type="checkbox" id="bkRvcMap" style="width:auto"> RVC 映射</label>
+        <label class="row" style="gap:8px"><input type="checkbox" id="bkStickers" style="width:auto"> 表情包</label>
+      </div>
+      <div class="row" style="margin-top:8px;gap:10px">
+        <span class="muted">保留份数</span>
+        <input id="bkRetention" type="number" min="1" max="60" style="width:80px" value="14">
+        <button onclick="saveBackupConfig()">保存设置</button>
+        <span class="muted" id="bkCfgMsg"></span>
+      </div>
+      <div class="muted" style="font-size:11px;margin-top:6px">只备份勾选的内容；每天 03:00 按这个设置跑。</div>
+    </details>
   </div>
   <div class="card" style="margin-top:14px"><h3>维护模式</h3>
     <div class="row" style="justify-content:space-between;padding:4px 0"><span>开启维护，暂停正常聊天</span>
@@ -2032,7 +2053,33 @@ async function loadBackup(){
       btn.disabled=false; btn.textContent='立即备份';
       msg.textContent = d.ok===false ? ('上次失败：'+(d.error||'未知错误')) : '';
     }
+    const c=d.config||{};
+    const set=function(id,v){const el=document.getElementById(id);if(el)el.checked=!!v;};
+    set('bkAstrbot',c.astrbot_data); set('bkData',c.dafeiyu_data);
+    set('bkSnow',c.snowluma_config); set('bkSecrets',c.secrets);
+    set('bkPersonas',c.personas); set('bkPanelCode',c.panel_code);
+    set('bkPanelState',c.panel_state); set('bkRvcMap',c.rvc_map);
+    set('bkStickers',c.stickers);
+    const ret=document.getElementById('bkRetention'); if(ret) ret.value=c.retention||14;
   }catch(e){}
+}
+
+async function saveBackupConfig(){
+  const get=id=>!!(document.getElementById(id)||{}).checked;
+  const payload={
+    astrbot_data:get('bkAstrbot'), dafeiyu_data:get('bkData'),
+    snowluma_config:get('bkSnow'), secrets:get('bkSecrets'),
+    personas:get('bkPersonas'), panel_code:get('bkPanelCode'),
+    panel_state:get('bkPanelState'), rvc_map:get('bkRvcMap'),
+    stickers:get('bkStickers'),
+    retention:parseInt((document.getElementById('bkRetention')||{}).value||'14',10)
+  };
+  try{
+    const r=await j('/api/backup/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    toast('备份设置已保存');
+    const m=document.getElementById('bkCfgMsg'); if(m)m.textContent='已保存，下次自动/手动备份生效';
+    await loadBackup();
+  }catch(e){toast('保存失败：'+e.message)}
 }
 
 async function backupNow(){

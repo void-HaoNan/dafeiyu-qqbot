@@ -1,4 +1,4 @@
-﻿# 备份机器人需要的东西：AstrBot 数据、大肥鱼数据、协议端配置、音色状态、人设和密钥
+﻿# 备份机器人需要的东西：备份内容由 data\dafeiyu\backup_config.json 决定。
 # 每天 03:00 由 QQBot-DailyBackup 计划任务调用，也可以在控制台点「立即备份」
 param(
     [string]$Root = ''
@@ -20,18 +20,80 @@ function Write-Log([string]$Message) {
     Add-Content -LiteralPath $log -Value $line -Encoding UTF8 -ErrorAction SilentlyContinue
 }
 
-Write-Log "开始备份 -> $dest"
+# 默认全部核心项；控制台保存后会生成这个文件
+$cfgPath = Join-Path $Root 'data\dafeiyu\backup_config.json'
+$cfg = $null
+if (Test-Path -LiteralPath $cfgPath) {
+    try {
+        $cfg = Get-Content -LiteralPath $cfgPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    } catch {
+        $cfg = $null
+    }
+}
+function Get-Bool([string]$Name, [bool]$Default) {
+    if ($null -eq $cfg) { return $Default }
+    $p = $cfg.PSObject.Properties[$Name]
+    if ($null -eq $p) { return $Default }
+    return [bool]$p.Value
+}
+function Get-Int([string]$Name, [int]$Default) {
+    if ($null -eq $cfg) { return $Default }
+    $p = $cfg.PSObject.Properties[$Name]
+    if ($null -eq $p) { return $Default }
+    try { return [int]$p.Value } catch { return $Default }
+}
 
-$targets = @(
-    @{ Path = (Join-Path $Root 'AstrBot\data');       Name = 'astrbot-data';             File = $false },
-    @{ Path = (Join-Path $Root 'data');               Name = 'data';                     File = $false },
-    @{ Path = (Join-Path $Root 'SnowLuma\config');    Name = 'snowluma-config';          File = $false },
-    @{ Path = (Join-Path $Root 'secrets');            Name = 'secrets';                  File = $false },
-    @{ Path = (Join-Path $Root 'personas');           Name = 'personas';                 File = $false },
-    @{ Path = (Join-Path $Root 'panel\model_state.json'); Name = 'panel\model_state.json'; File = $true },
-    @{ Path = (Join-Path $Root 'panel\rvc_state.json');   Name = 'panel\rvc_state.json';   File = $true },
-    @{ Path = (Join-Path $Root 'rvc\model_map.json');     Name = 'rvc\model_map.json';     File = $true }
-)
+$retention = [Math]::Max(1, [Math]::Min(60, (Get-Int 'retention' 14)))
+$targets = @()
+$labels = @()
+
+if (Get-Bool 'astrbot_data' $true) {
+    $targets += @{ Path = (Join-Path $Root 'AstrBot\data'); Name = 'astrbot-data'; File = $false }
+    $labels += 'AstrBot 数据'
+}
+if (Get-Bool 'dafeiyu_data' $true) {
+    $targets += @{ Path = (Join-Path $Root 'data'); Name = 'data'; File = $false }
+    $labels += '大肥鱼数据'
+}
+if (Get-Bool 'snowluma_config' $true) {
+    $targets += @{ Path = (Join-Path $Root 'SnowLuma\config'); Name = 'snowluma-config'; File = $false }
+    $labels += 'SnowLuma 配置'
+}
+if (Get-Bool 'secrets' $true) {
+    $targets += @{ Path = (Join-Path $Root 'secrets'); Name = 'secrets'; File = $false }
+    $labels += '密钥'
+}
+if (Get-Bool 'personas' $true) {
+    $targets += @{ Path = (Join-Path $Root 'personas'); Name = 'personas'; File = $false }
+    $labels += '人设'
+}
+if (Get-Bool 'panel_code' $true) {
+    foreach ($f in 'app.py', 'index.html', 'panel.vbs') {
+        $targets += @{ Path = (Join-Path $Root "panel\$f"); Name = "panel\$f"; File = $true }
+    }
+    $labels += '控制台代码'
+}
+if (Get-Bool 'panel_state' $true) {
+    foreach ($f in 'model_state.json', 'rvc_state.json') {
+        $targets += @{ Path = (Join-Path $Root "panel\$f"); Name = "panel\$f"; File = $true }
+    }
+    $labels += '控制台状态'
+}
+if (Get-Bool 'rvc_map' $true) {
+    $targets += @{ Path = (Join-Path $Root 'rvc\model_map.json'); Name = 'rvc\model_map.json'; File = $true }
+    $labels += 'RVC 映射'
+}
+if (Get-Bool 'stickers' $false) {
+    $targets += @{ Path = (Join-Path $Root 'stickers'); Name = 'stickers'; File = $false }
+    $labels += '表情包'
+}
+
+if ($targets.Count -eq 0) {
+    Write-Log '失败: 备份内容全是空的'
+    throw '没有勾选任何备份内容'
+}
+
+Write-Log "开始备份 -> $dest；内容: $($labels -join '、')；保留 $retention 份"
 
 try {
     foreach ($t in $targets) {
@@ -58,7 +120,8 @@ try {
         '大肥鱼备份',
         ('时间: ' + (Get-Date -Format 'yyyy-MM-dd HH:mm:ss')),
         ('来源: ' + $Root),
-        '包含: AstrBot 数据、大肥鱼数据、SnowLuma 配置、密钥、人设、音色状态、RVC 映射',
+        ('包含: ' + ($labels -join '、')),
+        ('保留: ' + $retention + ' 份'),
         '恢复: 解压后把各目录覆盖回同名位置；先停 AstrBot 和控制台。'
     ) -join "`r`n"
     Set-Content -LiteralPath (Join-Path $staging 'backup-info.txt') -Value $info -Encoding UTF8
@@ -77,11 +140,11 @@ finally {
     Remove-Item -LiteralPath $staging -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-# 只保留最近 14 份；部署包和手工备份不动
+# 只保留最近 N 份；部署包和手工备份不动
 Get-ChildItem $dest -Filter 'qqbot-*.zip' |
     Where-Object { $_.Name -notlike 'qqbot-deploy-*' } |
     Sort-Object LastWriteTime -Descending |
-    Select-Object -Skip 14 |
+    Select-Object -Skip $retention |
     ForEach-Object {
         Remove-Item $_.FullName -Force
         Write-Log "清理旧备份: $($_.Name)"

@@ -61,6 +61,19 @@ PLUGINS = DATA / "plugins"
 DISABLED = ROOT / "disabled_plugins"
 BACKUP_DIR = ROOT / "backups"
 BACKUP_STATE = ROOT / "panel" / "backup_state.json"
+BACKUP_CONFIG = ROOT / "data" / "dafeiyu" / "backup_config.json"
+BACKUP_DEFAULTS = {
+    "astrbot_data": True,
+    "dafeiyu_data": True,
+    "snowluma_config": True,
+    "secrets": True,
+    "personas": True,
+    "panel_code": True,
+    "panel_state": True,
+    "rvc_map": True,
+    "stickers": False,
+    "retention": 14,
+}
 
 
 def _find_snow_cfg() -> pathlib.Path:
@@ -267,6 +280,43 @@ def _backup_state_write(state: dict) -> None:
         pass
 
 
+def _backup_config_read() -> dict:
+    data = {}
+    try:
+        raw = json.loads(BACKUP_CONFIG.read_text(encoding="utf-8"))
+        if isinstance(raw, dict):
+            data = raw
+    except Exception:  # noqa: BLE001
+        data = {}
+    out = {}
+    for key, default in BACKUP_DEFAULTS.items():
+        if key == "retention":
+            try:
+                out[key] = max(1, min(60, int(data.get(key, default))))
+            except (TypeError, ValueError):
+                out[key] = default
+        else:
+            out[key] = bool(data.get(key, default))
+    return out
+
+
+def _backup_config_write(cfg: dict) -> dict:
+    clean = _backup_config_read()
+    for key in BACKUP_DEFAULTS:
+        if key == "retention":
+            try:
+                clean[key] = max(1, min(60, int(cfg.get(key, clean[key]))))
+            except (TypeError, ValueError):
+                pass
+        elif key in cfg:
+            clean[key] = bool(cfg[key])
+    BACKUP_CONFIG.parent.mkdir(parents=True, exist_ok=True)
+    tmp = BACKUP_CONFIG.with_suffix(".tmp")
+    tmp.write_text(json.dumps(clean, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.replace(BACKUP_CONFIG)
+    return clean
+
+
 def _backup_run() -> None:
     started = time.time()
     state = {
@@ -337,6 +387,7 @@ def _backup_status() -> dict:
         "latest": items[0] if items else None,
         "count": _backup_count(),
         "items": items[:5],
+        "config": _backup_config_read(),
     }
 
 
@@ -1649,6 +1700,16 @@ def backup_now() -> JSONResponse:
 @app.get("/api/backup/status")
 def backup_status() -> JSONResponse:
     return JSONResponse(_backup_status())
+
+
+@app.get("/api/backup/config")
+def backup_config_get() -> JSONResponse:
+    return JSONResponse(_backup_config_read())
+
+
+@app.post("/api/backup/config")
+def backup_config_save(payload: dict) -> JSONResponse:
+    return JSONResponse(_backup_config_write(payload))
 
 
 class Toggle(BaseModel):

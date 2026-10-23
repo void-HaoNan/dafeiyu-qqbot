@@ -107,22 +107,17 @@ D:\QQBot\AstrBot\.venv\Scripts\python.exe D:\QQBot\scripts\fetch_asr_model.py
 ## 备份
 
 每天 03:00 由 Windows 计划任务 `QQBot-DailyBackup` 跑 `backup.ps1`；
-控制台「管理」页的「备份」卡也能立即备份。备份在 `backups\qqbot-日期-时间.zip`，
-保留最近 14 份。
+控制台「管理」页的「备份」卡也能立即备份。备份在 `backups\qqbot-日期-时间.zip`。
+保留份数在管理页设置，默认 14 份，可以改成 1 到 60 份。
 
-包含：
+包含什么由管理页的「备份内容设置」决定，默认包含：
 
 - `AstrBot\data`：会话、provider、插件配置、知识库等
-- `data`：资料卡 `profiles.json`、黑白名单、token 记录、空间状态、网易云登录
+- `data`：资料卡 `profiles.json`、token 账本 `tokens.db`、黑白名单、空间状态、网易云登录
 - `SnowLuma\config`：协议端 token
-- `secrets`、`personas`、`panel\model_state.json`、`panel\rvc_state.json`、`rvc\model_map.json`
+- `secrets`、`personas`、控制台代码、`panel\model_state.json`、`panel\rvc_state.json`、`rvc\model_map.json`
 
-控制台「查看备份」打开 `http://127.0.0.1:6868/backups`，最近一份可以直接下载。
-恢复时先停 AstrBot 和控制台，把 zip 里的 `astrbot-data`、`data`、`panel` 等目录
-覆盖回 `D:\QQBot` 对应位置，再启动。
-
-模型、表情包、RVC 权重、日志和缓存不进每日备份：体积太大，而且能重新准备。
-这些要备就自己单独复制 `models`、`stickers`、`rvc`。
+表情包默认不备份，勾选后才进 zip。模型、RVC 权重、日志和缓存不进备份：体积太大，而且能重新准备。
 
 备份 zip 里有 API key、协议端 token、网易云 cookie，别传到网盘，也别发给别人。
 
@@ -132,6 +127,7 @@ D:\QQBot\AstrBot\.venv\Scripts\python.exe D:\QQBot\scripts\fetch_asr_model.py
 
 - `data/access_lists.json`：黑白名单（新好友、新入群默认都不进名单，要手动加）
 - `data/dafeiyu/tokens.db`：唯一 token 账本，一条回复一行（时间、QQ、群号、token）；控制台所有 token 数字都读它
+- `data/dafeiyu/backup_config.json`：备份内容开关和保留份数，控制台「管理」页可改
 - `data/dafeiyu/profiles.json`：人物档案（昵称、关系、喜好、印象），里面旧的 tokens 字段不再用于显示
 - 上下文：当前对话内容仍读 AstrBot 的 conversations，私聊每人一份，群每个一份；群成员共用群上下文
 - `data/dafeiyu/summary_state.json`：自动整理进度
