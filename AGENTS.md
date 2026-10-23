@@ -23,7 +23,7 @@
 
 ## 控制台
 
-总览只放四块：连接、插件、Token、健康。
+总览只放五块：连接、插件、上下文、Token、健康。
 
 总览不要快捷开关、最近会话、表情数量、插件数量、柱状图。
 
@@ -38,6 +38,8 @@ Token 只读 data\dafeiyu\tokens.db。插件每次回复写一行，字段是 ts
 provider_stats、conversations.token_usage、profiles.tokens 只保留给 AstrBot 自己用，控制台不再拿它们显示 token。
 
 清上下文不清 tokens.db，token 是累计消费；页面要写“累计 token”，不能当成当前上下文。
+
+上下文读 AstrBot conversations 的当前内容：私聊每人一份，群每个一份；群成员共用群上下文，不单独拆。清上下文会把当前字数归零，但 token 账本不动。
 
 管理页放模块、插件、工具、备份、维护、体检、名单、AstrBot 入口。
 

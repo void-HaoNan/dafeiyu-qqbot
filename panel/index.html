@@ -382,6 +382,11 @@ function renderOverview(s){const p=s.ports;const chip=(ok,l,key)=>`<div class="k
   <div class="overview-grid" style="margin-top:14px">
     <div class="card"><h3>连接</h3>${chip(qqUp,'QQ 登录','qq')}${chip(p.reverse_ws,'反向 WS 6199','reverse_ws')}${chip(p.onebot_http,'OneBot 3000','onebot_http')}${chip(p.snowluma,'SnowLuma 5099','snowluma')}${chip(p.astrbot,'AstrBot 6185','astrbot')}${chip(p.panel,'面板 6868','panel')}</div>
     <div class="card"><h3>插件</h3><div class="plugin-list">${pluginRows}</div></div>
+    <div class="card"><h3>上下文</h3>
+      <div class="kv"><span>私聊</span><b id="ctxPrivate">—</b></div>
+      <div class="kv"><span>群聊</span><b id="ctxGroup">—</b></div>
+      <div class="muted" style="font-size:11px;margin-top:8px">当前对话内容，不是累计记录</div>
+    </div>
   </div>
   <div class="card" style="margin-top:14px"><h3>Token 消耗 <span class="muted">每 10 秒刷新</span></h3>
     <div class="tokrow">
@@ -392,7 +397,7 @@ function renderOverview(s){const p=s.ports;const chip=(ok,l,key)=>`<div class="k
     </div>
   </div>
   <div class="grid" style="margin-top:14px" id="healthbox"></div>`;
-  loadHealth(); loadTokenRate();
+  loadHealth(); loadTokenRate(); loadContext();
   if(window.__tokTimer) clearInterval(window.__tokTimer);
   window.__tokTimer=setInterval(loadTokenRate,10000);
 }
@@ -409,6 +414,23 @@ async function loadTokenRate(){
     document.getElementById('tokToday').textContent=fmtNum(d.today);
     one.textContent=fmtNum(d.per_minute);
     document.getElementById('tok5').textContent=fmtNum(d.last_5m);
+  }catch(e){}
+}
+
+async function loadContext(){
+  const priv=document.getElementById('ctxPrivate');
+  const grp=document.getElementById('ctxGroup');
+  if(!priv||!grp) return;
+  try{
+    const d=await j('/api/sessions/stats');
+    let p=0, g=0;
+    Object.entries(d.items||{}).forEach(function(pair){
+      const umo=pair[0], chars=Number(pair[1].chars||0);
+      if(umo.indexOf(':FriendMessage:')>=0) p+=chars;
+      else if(umo.indexOf(':GroupMessage:')>=0) g+=chars;
+    });
+    priv.textContent=fmtNum(p)+' 字';
+    grp.textContent=fmtNum(g)+' 字';
   }catch(e){}
 }
 
@@ -435,7 +457,7 @@ async function loadHealth(){
 }
 
 const PAGE_DESC = {
-  '总览':'服务状态、插件、Token 消耗和健康检查',
+  '总览':'服务状态、插件、上下文、Token 和健康检查',
   '消息流':'收发消息记录',
   '好友':'好友、群聊、白名单和黑名单',
   '空间':'AI 说说、草稿和每日日记',
@@ -1655,12 +1677,13 @@ function renderFriendDetail(qq){
   if(!box) return;
   const f=(contactData.friends||[]).find(function(x){return String(x.id)===String(qq)})||{name:'QQ '+qq};
   const p=allProfiles.find(function(x){return x.qq===String(qq)});
+  const st=sessStats['snowluma:FriendMessage:'+qq];
   const gid=(p&&p.groups&&p.groups[0])||'';
   const btn='<button class="mini" style="margin-left:0" onclick="summarizeProfile(\''+esc(gid)+'\',\''+esc(String(qq))+'\')">整理记忆</button>';
   const head='<div class="row" style="justify-content:space-between;margin-bottom:10px">'
     +'<div class="row" style="gap:10px"><button class="mini" style="margin-left:0" onclick="closeFriend()">← 返回</button>'
     +'<b>'+esc(f.name||'')+'</b><span class="muted">'+esc(String(qq))+'</span>'+btn+'</div></div>';
-  box.innerHTML=head+(p?personCardHtml(p,{totalTokens:personTokens(qq)}):'<div class="muted">还没聊过，没有档案。</div>');
+  box.innerHTML=head+(p?personCardHtml(p,{contextChars:st?st.chars:0,totalTokens:personTokens(qq)}):'<div class="muted">还没聊过，没有档案。</div>');
 }
 
 async function summarizeProfile(gid,qq){
@@ -1699,7 +1722,7 @@ function renderGroupDetail(gid){
     .sort(function(a,b){return memberTokens(gid,b.qq)-memberTokens(gid,a.qq)||(b.msg_count||0)-(a.msg_count||0)});
   const head='<div class="row" style="justify-content:space-between;margin-bottom:10px">'
     +'<div class="row" style="gap:10px"><button class="mini" style="margin-left:0" onclick="closeGroup()">← 返回</button>'
-    +'<b>'+esc(g.name||'')+'</b><span class="muted">'+esc(String(gid))+' · '+fmt(g.members)+' 人 · 本群累计 ≈'+fmt(gToken)+' token</span> '+groupTag
+    +'<b>'+esc(g.name||'')+'</b><span class="muted">'+esc(String(gid))+' · '+fmt(g.members)+' 人 · 本群上下文 '+fmt(st?st.chars:0)+' 字 · 本群累计 ≈'+fmt(gToken)+' token</span> '+groupTag
     +'<button class="mini" style="margin-left:0" onclick="summarizeProfile(\''+esc(String(gid))+'\',\'\')">整理记忆</button></div>'
     +'</div>';
   const options=groupPeople.map(function(p){
@@ -1717,7 +1740,8 @@ function loadGroupPerson(){
   const box=document.getElementById('grpCard');
   if(!sel||!box) return;
   const p=groupPeople.find(function(x){return x.qq===sel.value});
-  box.innerHTML=p?personCardHtml(p,{groupTokens:memberTokens(groupView,p.qq),totalTokens:personTokens(p.qq)}):'';
+  const st=sessStats['snowluma:GroupMessage:'+groupView];
+  box.innerHTML=p?personCardHtml(p,{sharedChars:st?st.chars:0,groupTokens:memberTokens(groupView,p.qq),totalTokens:personTokens(p.qq)}):'';
 }
 
 function personCardHtml(p, meta){
@@ -1725,8 +1749,8 @@ function personCardHtml(p, meta){
   const likes=esc(p.likes||'').trim();
   const notes=esc(p.notes||'').trim();
   const tokenLine=meta.groupTokens!=null
-    ? '本群 ≈'+fmt(meta.groupTokens)+' token · 总计 ≈'+fmt(meta.totalTokens||0)+' token'
-    : '总计 ≈'+fmt(meta.totalTokens||0)+' token';
+    ? '本群上下文 '+fmt(meta.sharedChars||0)+' 字 · 本群累计 ≈'+fmt(meta.groupTokens)+' token · 总计 ≈'+fmt(meta.totalTokens||0)+' token'
+    : '当前上下文 '+fmt(meta.contextChars||0)+' 字 · 总计 ≈'+fmt(meta.totalTokens||0)+' token';
   return '<div class="pcard">'
     +'<div class="row" style="justify-content:space-between;gap:8px">'
     +'<div class="row" style="gap:8px"><span class="avatar">'+esc(String(p.alias||p.name||'?').slice(0,1))+'</span>'

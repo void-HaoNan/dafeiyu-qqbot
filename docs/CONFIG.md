@@ -133,6 +133,7 @@ D:\QQBot\AstrBot\.venv\Scripts\python.exe D:\QQBot\scripts\fetch_asr_model.py
 - `data/access_lists.json`：黑白名单（新好友、新入群默认都不进名单，要手动加）
 - `data/dafeiyu/tokens.db`：唯一 token 账本，一条回复一行（时间、QQ、群号、token）；控制台所有 token 数字都读它
 - `data/dafeiyu/profiles.json`：人物档案（昵称、关系、喜好、印象），里面旧的 tokens 字段不再用于显示
+- 上下文：当前对话内容仍读 AstrBot 的 conversations，私聊每人一份，群每个一份；群成员共用群上下文
 - `data/dafeiyu/summary_state.json`：自动整理进度
 - `data/dafeiyu/summary_requests.json`：一键整理请求队列
 - `data/dafeiyu/group_alerts.json`：新群提醒去重记录
