@@ -115,7 +115,7 @@ D:\QQBot\AstrBot\.venv\Scripts\python.exe D:\QQBot\scripts\fetch_asr_model.py
 - `AstrBot\data`：会话、provider、插件配置、知识库等
 - `data`：资料卡 `profiles.json`、token 账本 `tokens.db`、黑白名单、空间状态、网易云登录
 - `SnowLuma\config`：协议端 token
-- `secrets`、`personas`、控制台代码、`panel\model_state.json`、`panel\rvc_state.json`、`rvc\model_map.json`
+- `secrets`、`personas`、控制台代码、`panel\model_state.json`、`panel\rvc_state.json`、`rvc\model_map.json`、`backup.ps1` / `backup.vbs`
 
 表情包默认不备份，勾选后才进 zip。模型、RVC 权重、日志和缓存不进备份：体积太大，而且能重新准备。
 

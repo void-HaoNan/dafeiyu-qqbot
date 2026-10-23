@@ -71,6 +71,7 @@ BACKUP_DEFAULTS = {
     "panel_code": True,
     "panel_state": True,
     "rvc_map": True,
+    "backup_script": True,
     "stickers": False,
     "retention": 14,
 }

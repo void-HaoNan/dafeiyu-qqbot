@@ -83,6 +83,12 @@ if (Get-Bool 'rvc_map' $true) {
     $targets += @{ Path = (Join-Path $Root 'rvc\model_map.json'); Name = 'rvc\model_map.json'; File = $true }
     $labels += 'RVC 映射'
 }
+if (Get-Bool 'backup_script' $true) {
+    foreach ($f in 'backup.ps1', 'backup.vbs') {
+        $targets += @{ Path = (Join-Path $Root $f); Name = $f; File = $true }
+    }
+    $labels += '备份脚本'
+}
 if (Get-Bool 'stickers' $false) {
     $targets += @{ Path = (Join-Path $Root 'stickers'); Name = 'stickers'; File = $false }
     $labels += '表情包'
