@@ -33,7 +33,10 @@
   .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
   .overview-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));align-items:stretch}
   .overview-grid .card{height:100%;min-height:220px}
-  .plugin-list{display:grid;grid-template-columns:1fr;gap:0 18px}
+  .plugin-list{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+  .plugin-list .kv{min-width:0;gap:8px}
+  .plugin-list .kv>span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .plugin-list .kv>span:last-child{white-space:nowrap;flex:none}
   .tokrow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:12px}
   .tokstat{background:#131a26;border:1px solid var(--line);border-radius:10px;padding:14px;text-align:center;min-height:96px;display:flex;flex-direction:column;justify-content:center}
   .tokstat span{color:var(--sub);font-size:12px}
@@ -382,12 +385,6 @@ function renderOverview(s){const p=s.ports;const chip=(ok,l,key)=>`<div class="k
   <div class="overview-grid" style="margin-top:14px">
     <div class="card"><h3>连接</h3>${chip(qqUp,'QQ 登录','qq')}${chip(p.reverse_ws,'反向 WS 6199','reverse_ws')}${chip(p.onebot_http,'OneBot 3000','onebot_http')}${chip(p.snowluma,'SnowLuma 5099','snowluma')}${chip(p.astrbot,'AstrBot 6185','astrbot')}${chip(p.panel,'面板 6868','panel')}</div>
     <div class="card"><h3>插件</h3><div class="plugin-list">${pluginRows}</div></div>
-    <div class="card"><h3>上下文</h3>
-      <div class="tokrow" style="grid-template-columns:repeat(2,minmax(0,1fr))">
-        <div class="tokstat"><span>私聊</span><b id="ctxPrivate">—</b></div>
-        <div class="tokstat"><span>群聊</span><b id="ctxGroup">—</b></div>
-      </div>
-    </div>
   </div>
   <div class="card" style="margin-top:14px"><h3>Token 消耗 <span class="muted">每 10 秒刷新</span></h3>
     <div class="tokrow">
@@ -395,6 +392,14 @@ function renderOverview(s){const p=s.ports;const chip=(ok,l,key)=>`<div class="k
       <div class="tokstat"><span>今日消耗</span><b id="tokToday" title="今天所有会话的模型调用合计">—</b></div>
       <div class="tokstat"><span>最近 1 分钟</span><b id="tok1">—</b></div>
       <div class="tokstat"><span>最近 5 分钟</span><b id="tok5">—</b></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>上下文</h3>
+    <div class="tokrow">
+      <div class="tokstat"><span>私聊字数</span><b id="ctxPrivate">—</b></div>
+      <div class="tokstat"><span>群聊字数</span><b id="ctxGroup">—</b></div>
+      <div class="tokstat"><span>私聊会话</span><b id="ctxPrivateCount">—</b></div>
+      <div class="tokstat"><span>群聊会话</span><b id="ctxGroupCount">—</b></div>
     </div>
   </div>
   <div class="grid" style="margin-top:14px" id="healthbox"></div>`;
@@ -424,14 +429,18 @@ async function loadContext(){
   if(!priv||!grp) return;
   try{
     const d=await j('/api/sessions/stats');
-    let p=0, g=0;
+    let p=0, g=0, pc=0, gc=0;
     Object.entries(d.items||{}).forEach(function(pair){
       const umo=pair[0], chars=Number(pair[1].chars||0);
-      if(umo.indexOf(':FriendMessage:')>=0) p+=chars;
-      else if(umo.indexOf(':GroupMessage:')>=0) g+=chars;
+      if(umo.indexOf(':FriendMessage:')>=0){ p+=chars; pc++; }
+      else if(umo.indexOf(':GroupMessage:')>=0){ g+=chars; gc++; }
     });
     priv.textContent=fmtNum(p)+' 字';
     grp.textContent=fmtNum(g)+' 字';
+    const pn=document.getElementById('ctxPrivateCount');
+    const gn=document.getElementById('ctxGroupCount');
+    if(pn) pn.textContent=fmtNum(pc)+' 个';
+    if(gn) gn.textContent=fmtNum(gc)+' 个';
   }catch(e){}
 }
 
